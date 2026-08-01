@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#0d1420">
 <title>CO-OP LINK — P2P-демонстрация экрана для ко-опа</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230d1420'/%3E%3Crect x='7' y='8' width='6' height='16' fill='%23ffb454'/%3E%3Crect x='17' y='12' width='6' height='12' fill='%233fd8d4'/%3E%3C/svg%3E">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -237,6 +238,12 @@ main{max-width:1180px;margin:0 auto;padding:10px clamp(16px,4vw,36px) 90px}
   width:26px;height:3px;background:var(--amber)}
 @keyframes screenGlow{0%,100%{box-shadow:0 0 0 rgba(255,180,84,0)}50%{box-shadow:0 0 26px rgba(255,180,84,.4)}}
 
+/* Опция захвата системного звука */
+.sys-audio-opt{display:inline-flex;align-items:center;gap:9px;margin-top:16px;
+  font-family:var(--mono);font-size:.68rem;color:var(--muted);letter-spacing:.05em;
+  cursor:pointer;user-select:none}
+.sys-audio-opt input{width:16px;height:16px;accent-color:var(--amber);cursor:pointer}
+
 /* Оверлей «тапни, чтобы включить» (autoplay-политика Safari) */
 .tap-overlay{position:absolute;inset:0;z-index:8;display:none;flex-direction:column;
   align-items:center;justify-content:center;gap:16px;background:rgba(5,8,15,.82);
@@ -327,7 +334,7 @@ main{max-width:1180px;margin:0 auto;padding:10px clamp(16px,4vw,36px) 90px}
 
 <!-- ═══ HUD-БАР ═══ -->
 <header class="hud">
-  <div class="logo"><span class="logo-mark"><i></i><i></i></span>CO-OP&nbsp;LINK <small>P2P·v1.1</small></div>
+  <div class="logo"><span class="logo-mark"><i></i><i></i></span>CO-OP&nbsp;LINK <small>P2P·v2.0</small></div>
   <div class="hud-spacer"></div>
   <div class="room-chip" id="roomChip">ROOM&nbsp;<b id="roomChipCode">-----</b></div>
   <div class="pill" id="statusPill" data-state="idle"><span class="dot"></span><span id="statusText">ОЖИДАНИЕ</span></div>
@@ -393,6 +400,7 @@ main{max-width:1180px;margin:0 auto;padding:10px clamp(16px,4vw,36px) 90px}
       <div class="step"><i>04</i><b>P2P</b><span>Экран и голос текут напрямую. Firebase больше не участвует.</span></div>
     </div>
   </section>
+
   <!-- ═══ ЭКРАН: ХОСТ ═══ -->
   <section class="screen" id="screenHost">
     <div class="room-top">
@@ -415,8 +423,9 @@ main{max-width:1180px;margin:0 auto;padding:10px clamp(16px,4vw,36px) 90px}
         <div class="icon-screen"></div>
         <div class="stage-msg" id="hostStartMsg">Готов показать экран?</div>
         <button class="btn btn--xl" id="btnStartShare">▶ Начать демонстрацию</button>
+        <label class="sys-audio-opt"><input type="checkbox" id="chkSystemAudio"> захватывать системный звук (звук игры)</label>
         <div class="stage-sub">Chrome/Edge спросит, что транслировать — выбирай «Весь экран».<br>
-          Микрофон захватится отдельно, системный звук — по желанию.</div>
+          Микрофон захватится отдельно. Системный звук — только если включён чекбокс<br>и браузер его отдаст (надёжнее — вкладка со звуком).</div>
       </div>
     </div>
 
@@ -495,10 +504,18 @@ main{max-width:1180px;margin:0 auto;padding:10px clamp(16px,4vw,36px) 90px}
 
 <script type="module">
 /* ════════════════════════════════════════════════════════════════
-   CO-OP LINK v1.1 · WebRTC P2P + Firebase RTDB (только сигнализация)
-   Улучшения v1.1: fullscreen зрителя · авто-восстановление из фона ·
-   запрос ICE-restart от зрителя · диагностика icecandidateerror ·
-   фикс порядка pendingIce при ренеготиации.
+   CO-OP LINK v2.0 · WebRTC P2P + Firebase RTDB (только сигнализация)
+   Полный аудит и перепись. Ключевые фиксы:
+   · publishOffer: чистка кандидатов ДО setLocalDescription (иначе снос свежих)
+   · убран нестандартный minBitrate из setParameters
+   · устранена утечка трека экрана при ошибке микрофона
+   · защита от двойного входа + проверка существования комнаты
+   · корректная отписка подписок, сброс pendingIce при ICE-restart
+   · throttle + лимит попыток ICE-restart
+   · восстановление статуса при возврате связи с Firebase
+   · pagehide (надёжнее beforeunload на iPadOS)
+   · Screen Wake Lock, проверка поддержки WebRTC, логирование
+   · опция захвата системного звука
    ════════════════════════════════════════════════════════════════ */
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import {
@@ -506,7 +523,7 @@ import {
   onValue, onChildAdded, onDisconnect
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
 
-/* ── Конфиг проекта Firebase (two-players-three, europe-west1) ──── */
+/* ── Конфиг проекта Firebase ────────────────────────────────────── */
 const firebaseConfig = {
   apiKey:            "AIzaSyADutz-SdPLQAdAAh6uFXkduDZeVx7OXNk",
   authDomain:        "two-players-final.firebaseapp.com",
@@ -519,7 +536,8 @@ const firebaseConfig = {
 
 /* ── ICE-серверы ─────────────────────────────────────────────────
    STUN  — публичные Google (бесплатно, трафик через них НЕ идёт).
-   TURN  — публичный Open Relay как fallback (best-effort, без SLA).
+   TURN  — публичный Open Relay как fallback (best-effort, без SLA;
+           может быть перегружен/недоступен — это НЕ гарантия).
    ПЛАН Б — впиши свои ключи бесплатного тарифа Metered/Xirsys/ExpressTURN. */
 const ICE_SERVERS = [
   { urls: [
@@ -540,13 +558,18 @@ const ICE_SERVERS = [
 ];
 
 const TARGET_MAX_BITRATE = 16_000_000;  // потолок 16 Мбит/с
-const TARGET_MIN_BITRATE = 2_000_000;   // не опускаться ниже 2 Мбит/с
 const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // без 0/O, 1/I/L
 const CODE_LEN = 5;
+const RESTART_COOLDOWN = 4000;          // не чаще одного ICE-restart в 4 с
+const MAX_RESTARTS = 6;                 // лимит попыток до перехода в «Ошибка»
 
 /* ═══════════ ИНИЦИАЛИЗАЦИЯ ═══════════ */
 const app = initializeApp(firebaseConfig);
 const db  = getDatabase(app);
+
+/* ═══════════ ЛОГИРОВАНИЕ (для траблшутинга) ═══════════ */
+const log = (...a) => console.log('%c[CO-OP]','color:#ffb454;font-weight:bold',
+  new Date().toISOString().slice(11,19), ...a);
 
 /* ═══════════ СОСТОЯНИЕ ═══════════ */
 const state = {
@@ -556,16 +579,21 @@ const state = {
   localStream: null,
   micTrack: null,
   screenTrack: null,
+  sysAudioTrack: null, // системный звук (опция)
   pendingIce: [],      // очередь кандидатов до setRemoteDescription
   offerTs: 0,
   answerTs: 0,
   restartReqTs: 0,     // последний обработанный запрос restart от зрителя
+  lastRestartAt: 0,    // throttle ICE-restart (хост)
+  restartAttempts: 0,  // счётчик попыток рестарта
+  lastRestartReqAt: 0, // throttle запроса restart (зритель)
   sharing: false,
+  joining: false,      // защита от двойного входа
   statsTimer: null,
   prevBytes: null,
-    iceErrShown: false,  // чтобы icecandidateerror не спамил тостами
-  unsubCandidates: null, // подписка на ICE-кандидаты (идемпотентная)
-  unsubscribers: []    // подписки Firebase для очистки
+  iceErrShown: false,
+  unsubCandidates: null,
+  unsubscribers: []
 };
 
 /* ═══════════ DOM ═══════════ */
@@ -580,6 +608,7 @@ const el = {
   viewerBadge: $('viewerBadge'), viewerBadgeText: $('viewerBadgeText'), btnHostLeave: $('btnHostLeave'),
   hostStage: $('hostStage'), videoLocal: $('videoLocal'),
   hostStartPanel: $('hostStartPanel'), hostStartMsg: $('hostStartMsg'), btnStartShare: $('btnStartShare'),
+  chkSystemAudio: $('chkSystemAudio'),
   btnMicHost: $('btnMicHost'), btnStopShare: $('btnStopShare'),
   viewerCodeTiles: $('viewerCodeTiles'), hostBadge: $('hostBadge'), hostBadgeText: $('hostBadgeText'),
   btnViewerLeave: $('btnViewerLeave'), viewerStage: $('viewerStage'), videoRemote: $('videoRemote'),
@@ -592,13 +621,20 @@ const el = {
 };
 
 /* ═══════════ УТИЛИТЫ ═══════════ */
+// Равномерный код без перекоса (отбраковка значений >= limit).
 function genCode(){
-  const rnd = crypto.getRandomValues(new Uint8Array(CODE_LEN));
+  const limit = 256 - (256 % CODE_ALPHABET.length);
+  const buf = new Uint8Array(1);
   let s = '';
-  for (let i = 0; i < CODE_LEN; i++) s += CODE_ALPHABET[rnd[i] % CODE_ALPHABET.length];
+  while (s.length < CODE_LEN){
+    crypto.getRandomValues(buf);
+    if (buf[0] < limit) s += CODE_ALPHABET[buf[0] % CODE_ALPHABET.length];
+  }
   return s;
 }
-const normalizeCode = (v) => (v || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, CODE_LEN);
+// Нормализация строго по алфавиту кодов (отсекаем I/L/O/0/1 и мусор).
+const normalizeCode = (v) => (v || '').toUpperCase()
+  .split('').filter(c => CODE_ALPHABET.includes(c)).slice(0, CODE_LEN).join('');
 
 function toast(msg, type = ''){
   const t = document.createElement('div');
@@ -611,6 +647,19 @@ function toast(msg, type = ''){
 function setStatus(kind, text){
   el.statusPill.dataset.state = kind;   // idle | wait | ok | warn | err
   el.statusText.textContent = text.toUpperCase();
+}
+
+// Пересчитать статус по фактическому состоянию канала (используется после
+// восстановления связи с Firebase, чтобы не остаться в «Переподключение…»).
+function refreshStatusFromPc(){
+  if (!state.room){ setStatus('idle', 'Ожидание'); return; }
+  if (!state.pc){ setStatus('wait', state.role === 'host' ? 'Комната готова' : 'Ожидание хоста'); return; }
+  const cs = state.pc.connectionState;
+  if (cs === 'connected')                                   setStatus('ok', 'Подключено · медиа P2P');
+  else if (cs === 'failed')                                 setStatus('err', 'Соединение потеряно');
+  else if (cs === 'disconnected' || cs === 'connecting' || cs === 'new')
+                                                            setStatus('wait', 'Соединение…');
+  else                                                      setStatus('wait', 'Комната готова');
 }
 
 function showScreen(name){
@@ -646,37 +695,58 @@ async function copyText(text, okMsg){
 const roomLink = () => `${location.origin}${location.pathname}?room=${state.room}`;
 const rRef     = (path) => ref(db, `rooms/${state.room}/${path}`);
 
+/* ═══════════ SCREEN WAKE LOCK (iPad не гасит экран) ═══════════ */
+let wakeLock = null;
+async function requestWakeLock(){
+  if (!('wakeLock' in navigator)) return;
+  try { wakeLock = await navigator.wakeLock.request('screen'); log('wake lock: acquired'); }
+  catch (e){ log('wake lock failed:', e); }
+}
+function releaseWakeLock(){
+  if (wakeLock){ try { wakeLock.release(); } catch {} wakeLock = null; }
+}
+
 /* ═══════════ КОНТРОЛЬ СВЯЗИ С FIREBASE ═══════════ */
 onValue(ref(db, '.info/connected'), (snap) => {
   const up = snap.val() === true;
-  if (!up && state.room)      setStatus('warn', 'Переподключение к Firebase…');
-  else if (!up)               setStatus('idle', 'Нет связи с Firebase');
-  else if (!state.room)       setStatus('idle', 'Ожидание');
+  if (!up){
+    setStatus('warn', state.room ? 'Переподключение к Firebase…' : 'Нет связи с Firebase');
+    return;
+  }
+  // Связь восстановлена — пересчитываем статус по реальному состоянию канала.
+  refreshStatusFromPc();
 });
 
-/* При закрытии вкладки — прибираем за собой (плюс серверный onDisconnect) */
-window.addEventListener('beforeunload', () => {
-  if (state.role === 'host'   && state.room) remove(ref(db, `rooms/${state.room}`));
-  if (state.role === 'viewer' && state.room) remove(ref(db, `rooms/${state.room}/viewer`));
-});
+/* При закрытии/сворачивании вкладки прибираем за собой.
+   pagehide надёжнее beforeunload на iPadOS/Safari. Плюс серверный onDisconnect. */
+function cleanupOnUnload(){
+  if (!state.room) return;
+  try {
+    if (state.role === 'host')   remove(ref(db, `rooms/${state.room}`));
+    if (state.role === 'viewer') remove(ref(db, `rooms/${state.room}/viewer`));
+  } catch {}
+}
+window.addEventListener('pagehide', cleanupOnUnload);
+window.addEventListener('beforeunload', cleanupOnUnload);
+
 /* ═══════════ ЯДРО WebRTC ═══════════ */
 function buildPc(){
   const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS, bundlePolicy: 'max-bundle' });
   state.iceErrShown = false;
 
   pc.onicecandidate = (e) => {
-    if (!e.candidate) return;
+    if (!e.candidate || !state.room) return;
     const path = state.role === 'host' ? 'hostCandidates' : 'viewerCandidates';
     push(rRef(path), {
       candidate: e.candidate.candidate,
       sdpMid: e.candidate.sdpMid,
       sdpMLineIndex: e.candidate.sdpMLineIndex
-    }).catch(() => {});
+    }).catch((err) => log('не удалось отправить кандидата:', err));
   };
 
-  // Диагностика NAT-обхода: если STUN/TURN у кого-то блокируется — узнаем сразу, а не по тишине.
+  // Диагностика NAT-обхода: если STUN/TURN блокируется — узнаём сразу.
   pc.onicecandidateerror = (e) => {
-    console.warn('ICE candidate error:', e.errorCode, e.errorText, e.url);
+    log('ICE candidate error:', e.errorCode, e.errorText, e.url);
     if (!state.iceErrShown){
       state.iceErrShown = true;
       toast('NAT-обход: ошибка кандидата (код ' + e.errorCode + '). Если P2P не соберётся — поднимется TURN.', 'warn');
@@ -686,26 +756,34 @@ function buildPc(){
   pc.onconnectionstatechange = () => {
     if (pc !== state.pc) return;
     const s = pc.connectionState;
-    if (s === 'connected'){ setStatus('ok', 'Подключено · медиа P2P'); startStats(); }
-    if (s === 'disconnected') setStatus('warn', 'Сбой связи · восстановление…');
-    if (s === 'failed'){
+    log('connectionState:', s);
+    if (s === 'connected'){
+      state.restartAttempts = 0; state.lastRestartAt = 0;
+      setStatus('ok', 'Подключено · медиа P2P');
+      startStats();
+      requestWakeLock();
+    }
+    else if (s === 'disconnected') setStatus('warn', 'Сбой связи · восстановление…');
+    else if (s === 'failed'){
       if (state.role === 'host'){
-        toast('Соединение разорвано — выполняю ICE-restart…', 'warn');
-        publishOffer(true);
+        toast('Сбой соединения — пересобираю канал…', 'warn');
+        scheduleHostRestart();
       } else {
         setStatus('err', 'Соединение потеряно');
         toast('Связь потеряна — прошу хоста пересобрать канал…', 'err');
-        requestRestart();   // зритель сам инициирует restart через Firebase
+        requestRestart();
       }
     }
   };
   pc.oniceconnectionstatechange = () => {
-    if (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed')
-      setStatus('ok', 'Подключено · медиа P2P');
+    if (pc !== state.pc) return;
+    const s = pc.iceConnectionState;
+    if (s === 'connected' || s === 'completed') setStatus('ok', 'Подключено · медиа P2P');
   };
 
   pc.ontrack = (e) => {
     const stream = e.streams[0] || new MediaStream([e.track]);
+    log('ontrack:', e.track.kind);
     if (state.role === 'host'){
       el.audioRemote.srcObject = stream;               // хост слышит зрителя
       el.audioRemote.play().catch(() => {});
@@ -726,7 +804,7 @@ function buildPc(){
 async function addRemoteCandidate(c){
   if (!state.pc || !state.pc.remoteDescription){ state.pendingIce.push(c); return; }
   try { await state.pc.addIceCandidate(new RTCIceCandidate(c)); }
-  catch (e){ console.warn('ICE-кандидат отклонён:', e); }
+  catch (e){ log('ICE-кандидат отклонён:', e.message); }
 }
 function flushPendingIce(){ state.pendingIce.splice(0).forEach(addRemoteCandidate); }
 
@@ -736,18 +814,46 @@ async function applyBitratePrefs(){
     if (!sender) return;
     const p = sender.getParameters() || {};
     if (!p.encodings || !p.encodings.length) p.encodings = [{}];
+    // minBitrate намеренно НЕ ставим: поле нестандартное, в ряде сборок
+    // отклоняет весь setParameters. Реальный «пол» Chrome держит сам.
     p.encodings[0].maxBitrate = TARGET_MAX_BITRATE;      // 16 Мбит/с
-    p.encodings[0].minBitrate = TARGET_MIN_BITRATE;      // 2 Мбит/с
     p.encodings[0].scaleResolutionDownBy = 1.0;          // без даунскейла
-    p.encodings[0].degradationPreference = 'maintain-resolution';
+    p.encodings[0].degradationPreference = 'maintain-resolution'; // приоритет чёткости
     await sender.setParameters(p);
-  } catch (e){ console.warn('setParameters недоступен в этом браузере:', e); }
+    log('битрейт-параметры применены (max 16 Мбит/с, maintain-resolution)');
+  } catch (e){ log('setParameters недоступен:', e.message); }
 }
 
 function closePc(){
   if (state.pc){ try { state.pc.close(); } catch {} state.pc = null; }
   state.pendingIce = [];
   stopStats();
+}
+
+/* ═══════════ ICE-RESTART С THROTTLE ═══════════ */
+// Хост: не чаще раза в RESTART_COOLDOWN и не больше MAX_RESTARTS попыток подряд.
+function scheduleHostRestart(){
+  if (!state.pc || !state.sharing) return;
+  const now = Date.now();
+  if (now - state.lastRestartAt < RESTART_COOLDOWN) return;
+  if (state.restartAttempts >= MAX_RESTARTS){
+    setStatus('err', 'Не удалось восстановить связь');
+    toast('Превышен лимит попыток. Останови и запусти демонстрацию заново.', 'err');
+    return;
+  }
+  state.lastRestartAt = now;
+  state.restartAttempts++;
+  log('ICE-restart, попытка', state.restartAttempts);
+  publishOffer(true);
+}
+
+// Зритель: просит хоста пересобрать канал (тоже с throttle).
+function requestRestart(){
+  if (!state.room) return;
+  const now = Date.now();
+  if (now - state.lastRestartReqAt < RESTART_COOLDOWN) return;
+  state.lastRestartReqAt = now;
+  set(rRef('restartReq'), { ts: now }).catch(() => {});
 }
 
 /* ═══════════ ХОСТ ═══════════ */
@@ -765,16 +871,21 @@ async function createRoom(){
 
     const hostRef = ref(db, `rooms/${code}/host`);
     await set(hostRef, { online: true, joinedAt: Date.now() });
-    onDisconnect(hostRef).remove();                   // обрыв связи → комната чистится
+    // Обрыв связи → чистим presence хоста. Сигнализацию чистим явно в
+    // stopSharing/hostLeave; при жёстком крахе она безвредна (коды уникальны
+    // и перезаписываются при новом старте). Удалять ВСЮ комнату по onDisconnect
+    // нельзя: кратковременный обрыв Firebase ложно отключил бы зрителя при живом P2P.
+    onDisconnect(hostRef).remove();
 
     renderCodeTiles(el.hostCodeTiles, code);
     setRoomChip(code);
     showScreen('host');
     setStatus('wait', 'Комната готова');
     toast(`Комната ${code} создана — отправь другу ссылку`, 'ok');
+    log('комната создана:', code);
     watchViewerPresence();
     watchAnswer();
-    watchRestartReq();                                // слушаем просьбы зрителя пересобрать канал
+    watchRestartReq();
   } catch (e){
     console.error(e);
     setStatus('err', 'Ошибка Firebase');
@@ -802,7 +913,7 @@ function watchViewerPresence(){
   state.unsubscribers.push(un);
 }
 
-// Зритель просит пересобрать канал (вернулся из фона / сменил сеть) → хост делает ICE-restart.
+// Зритель просит пересобрать канал (вернулся из фона / сменил сеть).
 function watchRestartReq(){
   const un = onValue(rRef('restartReq'), (snap) => {
     const r = snap.val();
@@ -810,7 +921,7 @@ function watchRestartReq(){
     state.restartReqTs = r.ts;
     if (state.pc && state.sharing){
       toast('Зритель вернулся — пересобираю канал (ICE-restart)…', 'warn');
-      publishOffer(true);
+      scheduleHostRestart();
     }
   });
   state.unsubscribers.push(un);
@@ -819,13 +930,15 @@ function watchRestartReq(){
 async function startSharing(){
   el.btnStartShare.disabled = true;
   setStatus('wait', 'Запрос доступа к экрану…');
+  let display = null, voice = null;
   try {
-    const display = await navigator.mediaDevices.getDisplayMedia({
+    const wantSysAudio = el.chkSystemAudio.checked;
+    display = await navigator.mediaDevices.getDisplayMedia({
       video: { width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 60, max: 60 } },
-      audio: false,
+      audio: wantSysAudio,
       preferCurrentTab: false
     });
-    const voice = await navigator.mediaDevices.getUserMedia({
+    voice = await navigator.mediaDevices.getUserMedia({
       audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 },
       video: false
     });
@@ -833,8 +946,13 @@ async function startSharing(){
     state.screenTrack = display.getVideoTracks()[0];
     state.screenTrack.contentHint = 'detail';          // приоритет чёткости деталей/текста
     state.screenTrack.addEventListener('ended', () => stopSharing(true));
+    state.sysAudioTrack = display.getAudioTracks()[0] || null; // может отсутствовать
     state.micTrack = voice.getAudioTracks()[0];
-    state.localStream = new MediaStream([state.screenTrack, state.micTrack]);
+
+    const tracks = [state.screenTrack];
+    if (state.sysAudioTrack) tracks.push(state.sysAudioTrack);
+    tracks.push(state.micTrack);
+    state.localStream = new MediaStream(tracks);
 
     el.videoLocal.srcObject = state.localStream;
     el.hostStage.classList.add('live');
@@ -842,17 +960,24 @@ async function startSharing(){
     el.btnMicHost.disabled = false;
     el.btnStopShare.disabled = false;
     state.sharing = true;
+    state.restartAttempts = 0; state.lastRestartAt = 0;
 
     buildPc();
     state.pc.addTrack(state.screenTrack, state.localStream);
+    if (state.sysAudioTrack) state.pc.addTrack(state.sysAudioTrack, state.localStream);
     state.pc.addTrack(state.micTrack, state.localStream);
     watchRemoteCandidates();
     await publishOffer(false);
 
     setStatus('wait', 'Ожидание зрителя…');
     toast('Демонстрация запущена', 'ok');
+    log('демонстрация запущена, системный звук:', !!state.sysAudioTrack);
   } catch (e){
     console.error(e);
+    // Фикс утечки: останавливаем всё, что успели захватить.
+    if (display) display.getTracks().forEach(t => { try { t.stop(); } catch {} });
+    if (voice)   voice.getTracks().forEach(t => { try { t.stop(); } catch {} });
+    state.screenTrack = null; state.micTrack = null; state.sysAudioTrack = null;
     setStatus('err', 'Доступ отклонён');
     toast('Не удалось получить экран/микрофон: ' + e.message, 'err');
     el.btnStartShare.disabled = false;
@@ -861,16 +986,22 @@ async function startSharing(){
 
 async function publishOffer(restart){
   if (!state.pc) return;
+  if (restart) state.pendingIce = [];                  // старые кандидаты невалидны
   const offer = await state.pc.createOffer({ iceRestart: !!restart });
+
+  // СНАЧАЛА чистим узлы кандидатов, ПОТОМ ставим локальное описание.
+  // Иначе onicecandidate напишет свежие кандидаты, а следующий remove их снесёт.
+  await remove(rRef('hostCandidates')).catch(() => {});
+  await remove(rRef('viewerCandidates')).catch(() => {});
+  state.answerTs = 0;
+
   await state.pc.setLocalDescription(offer);
   await applyBitratePrefs();
-  await remove(rRef('hostCandidates'));                // чистим старые кандидаты
-  await remove(rRef('viewerCandidates'));
-  state.answerTs = 0;
   await set(rRef('offer'), {
     type: 'offer', sdp: state.pc.localDescription.sdp, ts: Date.now(), restart: !!restart
   });
   if (restart) toast('ICE-restart: новое рукопожатие опубликовано', 'warn');
+  log('offer опубликован, restart =', !!restart);
 }
 
 function watchAnswer(){
@@ -879,34 +1010,38 @@ function watchAnswer(){
     if (!a || a.ts <= state.answerTs || !state.pc) return;
     state.answerTs = a.ts;
     try {
-      await state.pc.setRemoteDescription(new RTCSessionDescription(a));
+      await state.pc.setRemoteDescription(new RTCSessionDescription({ type: a.type, sdp: a.sdp }));
       flushPendingIce();
-      setStatus('ok', 'Подключено · медиа P2P');
+      setStatus('wait', 'Соединение устанавливается…');
+      log('answer принят, ICE пошёл');
     } catch (e){ console.error('Ошибка answer:', e); }
   });
   state.unsubscribers.push(un);
 }
 
 function watchRemoteCandidates(){
-  // Идемпотентно: хост вызывает это при каждом «Начать демонстрацию»,
-  // поэтому сначала отписываемся от прошлой подписки, чтобы не дублировать.
-  if (state.unsubCandidates){ try { state.unsubCandidates(); } catch {} }
+  // Идемпотентно: отписываемся от прошлой подписки, чтобы не дублировать.
+  // Держим одну ссылку в state.unsubCandidates (не плодим в unsubscribers).
+  if (state.unsubCandidates){ try { state.unsubCandidates(); } catch {} state.unsubCandidates = null; }
   const path = state.role === 'host' ? 'viewerCandidates' : 'hostCandidates';
   state.unsubCandidates = onChildAdded(rRef(path), (snap) => addRemoteCandidate(snap.val()));
-  state.unsubscribers.push(state.unsubCandidates);
 }
+
 async function stopSharing(byTrackEnded){
   state.sharing = false;
-  if (state.screenTrack){ state.screenTrack.stop(); state.screenTrack = null; }
-  if (state.micTrack){ state.micTrack.stop(); state.micTrack = null; }
+  if (state.screenTrack){ try { state.screenTrack.stop(); } catch {} state.screenTrack = null; }
+  if (state.sysAudioTrack){ try { state.sysAudioTrack.stop(); } catch {} state.sysAudioTrack = null; }
+  if (state.micTrack){ try { state.micTrack.stop(); } catch {} state.micTrack = null; }
   state.localStream = null;
   el.videoLocal.srcObject = null;
   closePc();
+  releaseWakeLock();
   if (state.room){
-    await remove(rRef('offer')).catch(()=>{});
-    await remove(rRef('answer')).catch(()=>{});
-    await remove(rRef('hostCandidates')).catch(()=>{});
-    await remove(rRef('viewerCandidates')).catch(()=>{});
+    await remove(rRef('offer')).catch(() => {});
+    await remove(rRef('answer')).catch(() => {});
+    await remove(rRef('hostCandidates')).catch(() => {});
+    await remove(rRef('viewerCandidates')).catch(() => {});
+    await remove(rRef('restartReq')).catch(() => {});
   }
   el.hostStage.classList.remove('live');
   el.hostStartPanel.classList.remove('hidden');
@@ -919,8 +1054,8 @@ async function stopSharing(byTrackEnded){
 }
 
 async function hostLeave(){
-  await stopSharing(false).catch(()=>{});
-  if (state.room) await remove(ref(db, `rooms/${state.room}`)).catch(()=>{});
+  await stopSharing(false).catch(() => {});
+  if (state.room) await remove(ref(db, `rooms/${state.room}`)).catch(() => {});
   cleanupSession();
   showScreen('lobby');
   setStatus('idle', 'Ожидание');
@@ -928,49 +1063,79 @@ async function hostLeave(){
 }
 
 /* ═══════════ ЗРИТЕЛЬ ═══════════ */
+function setJoinButtonsDisabled(on){
+  el.btnJoin.disabled = on;
+  el.btnViewerConnect.disabled = on;
+}
+
 async function joinRoom(code){
-  state.role = 'viewer';
-  state.room = code;
-  renderCodeTiles(el.viewerCodeTiles, code);
-  setRoomChip(code);
-  showScreen('viewer');
-  el.viewerJoinPanel.classList.add('hidden');
-  el.viewerWaitPanel.classList.remove('hidden');
-  el.viewerWaitMsg.textContent = 'Подключение к комнате…';
-  setStatus('wait', 'Подключение…');
+  if (state.joining) return;                          // защита от двойного входа
+  state.joining = true;
+  setJoinButtonsDisabled(true);
+  try {
+    // Проверяем, что комната (хост) вообще существует.
+    const hostSnap = await get(ref(db, `rooms/${code}/host`));
+    if (!hostSnap.exists()){
+      toast('Комната не найдена — проверь код', 'err');
+      showScreen('lobby');
+      setStatus('idle', 'Ожидание');
+      return;
+    }
 
-  const viewerRef = rRef('viewer');
-  await set(viewerRef, { online: true, joinedAt: Date.now() });
-  onDisconnect(viewerRef).remove();
+    state.role = 'viewer';
+    state.room = code;
+    renderCodeTiles(el.viewerCodeTiles, code);
+    setRoomChip(code);
+    showScreen('viewer');
+    el.viewerJoinPanel.classList.add('hidden');
+    el.viewerWaitPanel.classList.remove('hidden');
+    el.viewerWaitMsg.textContent = 'Подключение к комнате…';
+    setStatus('wait', 'Подключение…');
 
-  try {                                                // микрофон — внутри жеста тапа
-    const voice = await navigator.mediaDevices.getUserMedia({
-      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 },
-      video: false
-    });
-    state.micTrack = voice.getAudioTracks()[0];
-    state.localStream = new MediaStream([state.micTrack]);
-    el.btnMicViewer.disabled = false;
+    const viewerRef = rRef('viewer');
+    await set(viewerRef, { online: true, joinedAt: Date.now() });
+    onDisconnect(viewerRef).remove();
+
+    try {                                             // микрофон — внутри жеста тапа
+      const voice = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 },
+        video: false
+      });
+      state.micTrack = voice.getAudioTracks()[0];
+      state.localStream = new MediaStream([state.micTrack]);
+      el.btnMicViewer.disabled = false;
+    } catch (e){
+      log('микрофон недоступен:', e.message);
+      toast('Микрофон недоступен — режим просмотра без голоса', 'warn');
+    }
+
+    buildPc();
+    if (state.micTrack) state.pc.addTrack(state.micTrack, state.localStream);
+    watchRemoteCandidates();
+    watchHostPresence();
+    watchOffer();
+    el.viewerWaitMsg.textContent = 'Ожидание демонстрации…';
+    log('зритель вошёл в комнату:', code);
   } catch (e){
-    console.warn(e);
-    toast('Микрофон недоступен — режим просмотра без голоса', 'warn');
+    console.error(e);
+    toast('Не удалось подключиться: ' + e.message, 'err');
+    setStatus('err', 'Ошибка подключения');
+  } finally {
+    state.joining = false;
+    setJoinButtonsDisabled(false);
   }
-
-  buildPc();
-  if (state.micTrack) state.pc.addTrack(state.micTrack, state.localStream);
-  watchRemoteCandidates();
-  watchHostPresence();
-  watchOffer();
-  el.viewerWaitMsg.textContent = 'Ожидание демонстрации…';
 }
 
 function watchOffer(){
   const un = onValue(rRef('offer'), async (snap) => {
     const o = snap.val();
     if (!o){
-      if (state.offerTs){                              // хост остановил демонстрацию
-          state.offerTs = 0; state.answerTs = 0; state.restartReqTs = 0; state.unsubCandidates = null;
+      if (state.offerTs){                             // хост остановил демонстрацию
+        state.offerTs = 0; state.answerTs = 0; state.restartReqTs = 0;
+        // Корректно отписываемся от кандидатов (раньше тут была утечка).
+        if (state.unsubCandidates){ try { state.unsubCandidates(); } catch {} state.unsubCandidates = null; }
         closePc();
+        releaseWakeLock();
         el.viewerStage.classList.remove('live');
         el.tapOverlay.classList.remove('visible');
         el.videoRemote.srcObject = null;
@@ -990,17 +1155,17 @@ function watchOffer(){
 
 async function handleOffer(o){
   if (!state.pc) buildPc();
-  await remove(rRef('viewerCandidates')).catch(()=>{}); // ренеготиация / ICE-restart
-  // pendingIce НЕ сбрасываем: кандидаты хоста, пришедшие раньше offer,
-  // обязаны дожить до flushPendingIce() после setRemoteDescription.
+  if (o.restart) state.pendingIce = [];               // при ICE-restart старые кандидаты невалидны
+  await remove(rRef('viewerCandidates')).catch(() => {});
   el.viewerWaitPanel.classList.remove('hidden');
   el.viewerWaitMsg.textContent = 'Рукопожатие…';
-  await state.pc.setRemoteDescription(new RTCSessionDescription(o));
+  await state.pc.setRemoteDescription(new RTCSessionDescription({ type: o.type, sdp: o.sdp }));
   flushPendingIce();
   const answer = await state.pc.createAnswer();
   await state.pc.setLocalDescription(answer);
   await set(rRef('answer'), { type: 'answer', sdp: state.pc.localDescription.sdp, ts: Date.now() });
-  setStatus('wait', 'Соединение…');
+  setStatus('wait', 'Соединение устанавливается…');
+  log('answer отправлен, restart =', !!o.restart);
 }
 
 function watchHostPresence(){
@@ -1028,7 +1193,7 @@ function tryPlayRemote(){
 
 /* ── Полноэкранный режим зрителя ──────────────────────────────────
    iPad/iPhone Safari: единственный надёжный путь — нативный
-   webkitEnterFullscreen() именно на <video> (системный плеер на весь экран).
+   webkitEnterFullscreen() именно на <video>.
    Chrome/Edge десктоп: стандартный requestFullscreen. */
 function enterFullscreen(v){
   try {
@@ -1036,7 +1201,7 @@ function enterFullscreen(v){
     if (v.webkitEnterFullScreen)  { v.webkitEnterFullScreen();  return; }
     if (v.requestFullscreen)      { v.requestFullscreen();      return; }
     if (v.webkitRequestFullscreen){ v.webkitRequestFullscreen();return; }
-  } catch (e){ console.warn('fullscreen:', e); }
+  } catch (e){ log('fullscreen:', e); }
   toast('Полноэкранный режим не поддержан этим браузером', 'warn');
 }
 function isFullscreen(v){
@@ -1048,7 +1213,7 @@ function exitFullscreen(v){
     if (v && v.webkitDisplayingFullscreen && v.webkitExitFullscreen){ v.webkitExitFullscreen(); return; }
     if (document.exitFullscreen)      { document.exitFullscreen();      return; }
     if (document.webkitExitFullscreen){ document.webkitExitFullscreen();return; }
-  } catch (e){ console.warn('exit fullscreen:', e); }
+  } catch (e){ log('exit fullscreen:', e); }
 }
 function toggleViewerFullscreen(){
   const v = el.videoRemote;
@@ -1059,14 +1224,8 @@ function setFullscreenAvailable(on){
   el.fsFloat.classList.toggle('show', !!on);
 }
 
-/* Зритель просит хоста пересобрать канал (вернулся из фона / сменил сеть). */
-function requestRestart(){
-  if (!state.room) return;
-  set(rRef('restartReq'), { ts: Date.now() }).catch(()=>{});
-}
-
 async function viewerLeave(){
-  if (state.room) await remove(rRef('viewer')).catch(()=>{});
+  if (state.room) await remove(rRef('viewer')).catch(() => {});
   cleanupSession();
   showScreen('lobby');
   setStatus('idle', 'Ожидание');
@@ -1076,9 +1235,14 @@ async function viewerLeave(){
 function cleanupSession(){
   state.unsubscribers.forEach(u => { try { u(); } catch {} });
   state.unsubscribers = [];
+  if (state.unsubCandidates){ try { state.unsubCandidates(); } catch {} state.unsubCandidates = null; }
   closePc();
+  releaseWakeLock();
+  if (state.micTrack){ try { state.micTrack.stop(); } catch {} state.micTrack = null; }
+  state.localStream = null;
   state.role = null; state.room = null;
   state.offerTs = 0; state.answerTs = 0; state.restartReqTs = 0;
+  state.lastRestartAt = 0; state.restartAttempts = 0; state.lastRestartReqAt = 0;
   setRoomChip(null);
   el.audioRemote.srcObject = null;
   el.videoRemote.srcObject = null;
@@ -1088,12 +1252,13 @@ function cleanupSession(){
   history.replaceState(null, '', location.pathname);
 }
 
-/* ═══════════ ВОЗВРАТ ИЗ ФОНА (iPad/iOS замораживает вкладку) ═══════════
-   При возврате: будим видео и, если связь умерла, просим пересобрать канал. */
+/* ═══════════ ВОЗВРАТ ИЗ ФОНА (iPad/iOS замораживает вкладку) ═══════════ */
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState !== 'visible' || !state.room) return;
+  // Wake Lock сбрасывается при уходе в фон — запрашиваем заново.
+  if (state.pc && state.pc.connectionState === 'connected') requestWakeLock();
   if (state.role === 'viewer'){
-    if (el.videoRemote.srcObject && el.videoRemote.paused) el.videoRemote.play().catch(()=>{});
+    if (el.videoRemote.srcObject && el.videoRemote.paused) el.videoRemote.play().catch(() => {});
     if (state.pc && (state.pc.connectionState === 'failed' || state.pc.connectionState === 'disconnected')){
       toast('Вернулся в приложение — восстанавливаю связь…', 'warn');
       requestRestart();
@@ -1101,7 +1266,7 @@ document.addEventListener('visibilitychange', () => {
   } else if (state.role === 'host' && state.sharing && state.pc &&
              (state.pc.connectionState === 'failed' || state.pc.connectionState === 'disconnected')){
     toast('Вернулся в приложение — пересобираю канал…', 'warn');
-    publishOffer(true);
+    scheduleHostRestart();
   }
 });
 
@@ -1119,8 +1284,10 @@ async function collectStats(){
 
     report.forEach((r) => {
       if (r.type === 'local-candidate' || r.type === 'remote-candidate') candTypes[r.id] = r.candidateType;
-      const isOut = r.type === 'outbound-rtp' && r.kind === 'video';
-      const isIn  = r.type === 'inbound-rtp'  && r.kind === 'video';
+      // Совместимость: Chrome — kind, часть версий Safari — mediaType.
+      const isVideo = (r.kind || r.mediaType) === 'video';
+      const isOut = r.type === 'outbound-rtp' && isVideo;
+      const isIn  = r.type === 'inbound-rtp'  && isVideo;
       if (isOut || isIn){
         bytes = isOut ? r.bytesSent : r.bytesReceived;
         t = r.timestamp;
@@ -1149,7 +1316,7 @@ async function collectStats(){
       else if (lt === 'host' && rt === 'host'){ el.statRoute.textContent = 'локальная сеть (host)'; el.statRoute.className = 'route-badge p2p'; }
       else { el.statRoute.textContent = 'напрямую (P2P)'; el.statRoute.className = 'route-badge p2p'; }
     }
-  } catch (e){ console.warn('getStats:', e); }
+  } catch (e){ log('getStats:', e.message); }
 }
 
 /* ═══════════ UI-СОБЫТИЯ ═══════════ */
@@ -1173,7 +1340,7 @@ el.btnJoin.addEventListener('click', () => {
     toast('Введи код комнаты — ровно 5 символов', 'warn');
     return;
   }
-  joinRoom(code);                                      // клик = жест: микрофон и autoplay легитимны
+  joinRoom(code);                                     // клик = жест: микрофон и autoplay легитимны
 });
 el.inputJoinCode.addEventListener('input', (e) => { e.target.value = normalizeCode(e.target.value); });
 el.inputJoinCode.addEventListener('keydown', (e) => { if (e.key === 'Enter') el.btnJoin.click(); });
@@ -1190,7 +1357,7 @@ el.btnViewerLeave.addEventListener('click', viewerLeave);
 bindMic(el.btnMicHost);
 bindMic(el.btnMicViewer);
 el.tapOverlay.addEventListener('click', () => {
-  el.videoRemote.play().then(() => el.tapOverlay.classList.remove('visible')).catch(()=>{});
+  el.videoRemote.play().then(() => el.tapOverlay.classList.remove('visible')).catch(() => {});
 });
 el.btnFullscreenViewer.addEventListener('click', toggleViewerFullscreen);
 el.fsFloat.addEventListener('click', toggleViewerFullscreen);
@@ -1199,6 +1366,15 @@ el.btnStatsClose.addEventListener('click', () => el.statsPanel.classList.remove(
 
 /* ═══════════ СТАРТ ═══════════ */
 (function init(){
+  // Проверка поддержки WebRTC — чтобы не упасть молча на старом браузере.
+  if (!('RTCPeerConnection' in window) || !navigator.mediaDevices){
+    setStatus('err', 'Браузер не поддерживает WebRTC');
+    toast('Этот браузер не поддерживает WebRTC. Используй Chrome/Edge (хост) или Safari (iPad).', 'err');
+    el.btnCreateRoom.disabled = true;
+    el.btnJoin.disabled = true;
+    return;
+  }
+
   const roomFromUrl = normalizeCode(new URLSearchParams(location.search).get('room') || '');
   if (roomFromUrl){
     el.inputJoinCode.value = roomFromUrl;
@@ -1206,7 +1382,7 @@ el.btnStatsClose.addEventListener('click', () => el.statsPanel.classList.remove(
     renderCodeTiles(el.viewerCodeTiles, roomFromUrl);
     setRoomChip(roomFromUrl);
     state.room = roomFromUrl;
-    showScreen('viewer');                              // по ссылке — сразу в комнату
+    showScreen('viewer');                             // по ссылке — сразу в комнату (нужен тап «Подключиться»)
     setStatus('wait', 'Комната ' + roomFromUrl);
   } else {
     setStatus('idle', 'Ожидание');
