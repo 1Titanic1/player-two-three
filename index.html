@@ -4,10 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#0d1420">
-<meta name="description" content="CO-OP LINK v4 — P2P-демонстрация экрана для ко-опа через WebRTC и Firebase-сигнализацию.">
-<meta http-equiv="Permissions-Policy" content="camera=(self), microphone=(self), display-capture=(self), fullscreen=(self)">
+<meta name="description" content="CO-OP LINK v5 — P2P-демонстрация экрана для ко-опа через WebRTC и Firebase-сигнализацию.">
 <title>CO-OP LINK — P2P-демонстрация экрана для ко-опа</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%rect width='32' height='32' fill='%230d1420'/%3E%rect x='7' y='8' width='6' height='16' fill='%23ffb454'/%3E%rect x='17' y='12' width='6' height='12' fill='%233fd8d4'/%3E%rect x='25' y='16' width='0' height='0'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230d1420'/%3E%3Crect x='7' y='8' width='6' height='16' fill='%23ffb454'/%3E%3Crect x='17' y='12' width='6' height='12' fill='%233fd8d4'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Russo+One&family=Rubik:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -26,6 +25,10 @@ html{color-scheme:dark;-webkit-text-size-adjust:100%}
 --body:'Rubik',system-ui,sans-serif;
 --mono:'JetBrains Mono',ui-monospace,monospace;
 --shadow:0 18px 50px rgba(0,0,0,.55);
+--safe-top:env(safe-area-inset-top,0px);
+--safe-right:env(safe-area-inset-right,0px);
+--safe-bottom:env(safe-area-inset-bottom,0px);
+--safe-left:env(safe-area-inset-left,0px);
 }
 html,body{height:100%}
 body{
@@ -33,17 +36,15 @@ font-family:var(--body);
 color:var(--text);
 min-height:100vh;
 overflow-x:hidden;
+-webkit-tap-highlight-color:transparent;
+touch-action:manipulation;
 background:
 radial-gradient(1100px 700px at 88% -12%, rgba(63,216,212,.10), transparent 60%),
 radial-gradient(1000px 800px at -12% 18%, rgba(255,150,60,.11), transparent 55%),
 linear-gradient(180deg,var(--bg2),var(--bg) 40%);
 }
 body::before{
-content:'';
-position:fixed;
-inset:0;
-z-index:-2;
-pointer-events:none;
+content:'';position:fixed;inset:0;z-index:-2;pointer-events:none;
 background-image:
 linear-gradient(rgba(120,150,200,.05) 1px,transparent 1px),
 linear-gradient(90deg,rgba(120,150,200,.05) 1px,transparent 1px);
@@ -63,13 +64,13 @@ background:repeating-linear-gradient(0deg,rgba(255,255,255,.014) 0 1px,transpare
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
 video{display:block;width:100%;height:100%;object-fit:contain;background:#05080f}
-:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+:focus-visible{outline:none;box-shadow:0 0 0 2px var(--teal),0 0 0 4px rgba(63,216,212,.25)}
 .sr-only{
 position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
 clip:rect(0 0 0 0);white-space:nowrap;border:0;
 }
 .fatal-banner{
-position:fixed;inset:auto 12px 12px 12px;z-index:100;
+position:fixed;inset:auto 12px calc(12px + var(--safe-bottom)) 12px;z-index:100;
 padding:14px 16px;border:1px solid rgba(248,113,113,.6);
 background:rgba(35,10,10,.96);color:#ffd7d7;
 font-family:var(--mono);font-size:.8rem;line-height:1.55;
@@ -78,11 +79,14 @@ box-shadow:var(--shadow);
 .hud{
 position:sticky;top:0;z-index:50;
 display:flex;align-items:center;gap:12px;
-padding:12px clamp(16px,4vw,36px);
+padding:calc(12px + var(--safe-top)) clamp(16px,4vw,36px) 12px;
+padding-right:calc(clamp(16px,4vw,36px) + var(--safe-right));
+padding-left:calc(clamp(16px,4vw,36px) + var(--safe-left));
 border-bottom:1px solid var(--line);
-background:rgba(13,20,32,.84);
-backdrop-filter:blur(10px);
--webkit-backdrop-filter:blur(10px);
+background:rgba(13,20,32,.94);
+}
+@supports (backdrop-filter:blur(10px)) or (-webkit-backdrop-filter:blur(10px)){
+.hud{background:rgba(13,20,32,.84);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
 }
 .logo{
 display:flex;align-items:baseline;gap:10px;
@@ -139,7 +143,7 @@ transition:transform .18s ease,filter .18s ease,opacity .18s ease;
 .btn--sm{padding:9px 15px;font-size:.68rem;letter-spacing:.07em}
 .btn--block{width:100%}
 .btn--muted.muted{color:var(--red);box-shadow:inset 0 0 0 1px rgba(248,113,113,.55)}
-main{max-width:1180px;margin:0 auto;padding:10px clamp(16px,4vw,36px) 90px}
+main{max-width:1180px;margin:0 auto;padding:10px clamp(16px,4vw,36px) 90px;padding-bottom:calc(90px + var(--safe-bottom))}
 .screen{display:none}
 .screen.active{display:block;animation:fadeUp .45s ease both}
 @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
@@ -259,15 +263,20 @@ color:var(--amber);transition:transform .15s ease,border-color .15s ease;
 display:inline-flex;align-items:center;gap:8px;
 font-family:var(--mono);font-size:.66rem;letter-spacing:.12em;
 padding:9px 13px;border:1px solid var(--line);background:var(--bg2);
-color:var(--muted);white-space:nowrap;transition:.25s;
+color:var(--muted);white-space:nowrap;transition:color .25s,border-color .25s;
 }
 .presence .dot{width:8px;height:8px;border-radius:50%;background:#5b6c87;flex:none}
 .presence.online{color:var(--green);border-color:rgba(74,222,128,.4)}
 .presence.online .dot{background:var(--green);box-shadow:0 0 9px var(--green);animation:pulse 1.6s infinite}
 .stage{
-position:relative;aspect-ratio:16/9;background:#05080f;
+position:relative;background:#05080f;
 border:1px solid var(--line);overflow:hidden;
 transition:border-color .35s,box-shadow .35s;
+aspect-ratio:16/9;
+min-height:220px;
+}
+@supports not (aspect-ratio:16/9){
+.stage{height:56.25vw;max-height:calc(100vh - 240px);min-height:220px}
 }
 .stage.live{
 border-color:rgba(255,180,84,.55);
@@ -363,14 +372,15 @@ letter-spacing:.05em;line-height:1.8;
 position:fixed;z-index:70;
 border:1px solid var(--line2);
 background:rgba(13,20,32,.96);
-backdrop-filter:blur(8px);
--webkit-backdrop-filter:blur(8px);
 box-shadow:var(--shadow);
 opacity:0;visibility:hidden;pointer-events:none;
 transform:translateY(14px);
 transition:.3s ease;
 }
-.stats{right:18px;bottom:18px;width:292px;padding:14px 16px}
+@supports (backdrop-filter:blur(8px)) or (-webkit-backdrop-filter:blur(8px)){
+.stats,.diag{backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);background:rgba(13,20,32,.92)}
+}
+.stats{right:calc(18px + var(--safe-right));bottom:calc(18px + var(--safe-bottom));width:292px;padding:14px 16px}
 .stats.open,.diag.open{opacity:1;visibility:visible;pointer-events:auto;transform:none}
 .stats h5,.diag h5{
 display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;
@@ -390,18 +400,19 @@ color:var(--muted);text-transform:uppercase;
 .stat--wide{grid-column:1/-1}
 .route-badge{
 display:inline-block;margin-top:4px;font-family:var(--mono);font-size:.62rem;
-letter-spacing:.1em;padding:4px 9px;border:1px solid var(--line2);color:var(--muted);transition:.3s;
+letter-spacing:.1em;padding:4px 9px;border:1px solid var(--line2);color:var(--muted);transition:color .25s,border-color .25s;
 }
 .route-badge.p2p{color:var(--green);border-color:rgba(74,222,128,.45)}
 .route-badge.relay{color:var(--amber);border-color:rgba(255,180,84,.5)}
 .ice-badge{
 display:inline-block;margin-top:4px;font-family:var(--mono);font-size:.6rem;
-letter-spacing:.06em;padding:4px 9px;border:1px solid var(--line2);color:var(--muted);transition:.3s;
+letter-spacing:.06em;padding:4px 9px;border:1px solid var(--line2);color:var(--muted);transition:color .25s,border-color .25s;
 }
 .ice-badge.good{color:var(--green);border-color:rgba(74,222,128,.45)}
 .ice-badge.bad{color:var(--red);border-color:rgba(248,113,113,.45)}
 .diag{
-right:12px;left:12px;bottom:12px;top:74px;
+right:calc(12px + var(--safe-right));left:calc(12px + var(--safe-left));
+bottom:calc(12px + var(--safe-bottom));top:74px;
 display:flex;flex-direction:column;gap:12px;padding:16px;
 }
 .diag-actions{display:flex;flex-wrap:wrap;gap:10px}
@@ -455,7 +466,7 @@ padding:6px 9px;border:1px solid var(--line2);color:var(--muted);
 }
 .turn-cfg .turn-status.custom{color:var(--green);border-color:rgba(74,222,128,.4)}
 .toasts{
-position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:80;
+position:fixed;left:50%;bottom:calc(26px + var(--safe-bottom));transform:translateX(-50%);z-index:80;
 display:flex;flex-direction:column;align-items:center;gap:10px;
 pointer-events:none;width:min(92vw,620px);
 }
@@ -463,6 +474,7 @@ pointer-events:none;width:min(92vw,620px);
 font-family:var(--mono);font-size:.74rem;line-height:1.5;padding:12px 20px;max-width:100%;
 border:1px solid var(--line2);background:rgba(17,26,41,.97);color:var(--text);
 box-shadow:0 12px 34px rgba(0,0,0,.5);animation:toastIn .3s ease both;
+pointer-events:auto;
 }
 .toast--ok{border-color:rgba(74,222,128,.55);color:var(--green)}
 .toast--err{border-color:rgba(248,113,113,.55);color:var(--red)}
@@ -476,11 +488,21 @@ display:none;place-items:center;border:1px solid rgba(63,216,212,.55);border-rad
 background:rgba(13,20,32,.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
 color:var(--teal);cursor:pointer;transition:transform .15s ease,background .2s,color .2s;
 }
+@supports not ((backdrop-filter:blur(6px)) or (-webkit-backdrop-filter:blur(6px))){
+.fs-float{background:rgba(13,20,32,.92)}
+}
 .fs-float.show{display:grid}
 .fs-float:hover{background:rgba(63,216,212,.2);color:#fff;transform:scale(1.07)}
 .fs-float svg{width:26px;height:26px}
 .stage:fullscreen,.stage:-webkit-full-screen{border:0;background:#000}
 .stage:fullscreen video,.stage:-webkit-full-screen video{background:#000}
+.unmute-host-btn{
+display:none;align-items:center;gap:8px;margin-top:12px;
+font-family:var(--mono);font-size:.68rem;color:var(--teal);
+background:rgba(63,216,212,.12);border:1px solid rgba(63,216,212,.4);
+padding:8px 14px;cursor:pointer;
+}
+.unmute-host-btn.show{display:inline-flex}
 @media (max-width:920px){
 .lobby-head{grid-template-columns:1fr;align-items:start;gap:24px}
 .roles{grid-template-columns:1fr}
@@ -491,7 +513,7 @@ color:var(--teal);cursor:pointer;transition:transform .15s ease,background .2s,c
 .turn-cfg .turn-row2{grid-template-columns:1fr}
 }
 @media (max-width:640px){
-.hud{gap:8px;padding:10px 14px}
+.hud{gap:8px;padding:10px 14px;padding-top:calc(10px + var(--safe-top))}
 .logo small{display:none}
 .pill{font-size:.6rem;padding:6px 9px}
 .stats{left:12px;right:12px;width:auto}
@@ -501,10 +523,10 @@ color:var(--teal);cursor:pointer;transition:transform .15s ease,background .2s,c
 .room-top{gap:10px}
 }
 @media (prefers-reduced-motion:reduce){
-*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+*,*::before,*::after{animation:none!important;transition:none!important}
 }
 @media (prefers-reduced-transparency:reduce){
-.hud,.stats,.diag,.fs-float{backdrop-filter:none;-webkit-backdrop-filter:none}
+.hud,.stats,.diag,.fs-float{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
 }
 </style>
 </head>
@@ -514,7 +536,7 @@ color:var(--teal);cursor:pointer;transition:transform .15s ease,background .2s,c
 <div class="scanlines"></div>
 
 <header class="hud">
-  <div class="logo"><span class="logo-mark"><i></i><i></i></span>CO-OP&nbsp;LINK <small>P2P·v4.0</small></div>
+  <div class="logo"><span class="logo-mark"><i></i><i></i></span>CO-OP&nbsp;LINK <small>P2P·v5.0</small></div>
   <div class="hud-spacer"></div>
   <div class="room-chip" id="roomChip">ROOM&nbsp;<b id="roomChipCode">-----</b></div>
   <div class="pill" id="statusPill" data-state="idle" role="status" aria-live="polite">
@@ -662,6 +684,7 @@ color:var(--teal);cursor:pointer;transition:transform .15s ease,background .2s,c
       <button class="btn btn--ghost btn--sm btn--muted" id="btnMuteViewer" disabled>🔊 Зритель: вкл</button>
       <button class="btn btn--danger btn--sm" id="btnStopShare" disabled>■ Остановить демонстрацию</button>
       <button class="btn btn--ghost btn--sm" id="btnHostRestart" disabled>⟳ Перезапустить канал</button>
+      <button class="btn btn--teal btn--sm unmute-host-btn" id="btnUnmuteHost">🔈 Включить звук зрителя</button>
       <div class="grow"></div>
       <div class="hint-line">// медиа идёт <b>напрямую (P2P)</b> · если NAT строгий — через TURN · кнопки качества применяются на лету</div>
     </div>
@@ -782,8 +805,6 @@ color:var(--teal);cursor:pointer;transition:transform .15s ease,background .2s,c
 <audio id="audioRemote" autoplay></audio>
 <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
 
-<!-- ЧАСТЬ 1/2 завершена. Во втором сообщении — весь JavaScript (v4) с фиксами багов A/C,
-     логикой своего TURN, усиленной ICE-диагностикой и закрывающие теги. -->
 <script type="module">
 const $ = (id) => document.getElementById(id);
 
@@ -819,15 +840,15 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-   const STUN_SERVERS = {
-     urls: [
-       'stun:stun.cloudflare.com:3478',
-       'stun:stun.nextcloud.com:443',
-       'stun:stun.l.google.com:19302',
-       'stun:stun1.l.google.com:19302',
-       'stun:stun.stunprotocol.org:3478'
-     ]
-   };
+const STUN_SERVERS = {
+  urls: [
+    'stun:stun.cloudflare.com:3478',
+    'stun:stun.nextcloud.com:443',
+    'stun:stun.l.google.com:19302',
+    'stun:stun1.l.google.com:19302',
+    'stun:stun.stunprotocol.org:3478'
+  ]
+};
 
 const OPENRELAY_FALLBACK = {
   urls: [
@@ -847,9 +868,10 @@ const CONNECT_TIMEOUT_MS = 20000;
 const DISCONNECT_GRACE_MS = 10000;
 const HEARTBEAT_MS = 10000;
 const VIEWER_LOCK_STALE_MS = 30000;
-const LS_SETTINGS = 'cooplink.settings.v4';
-const LS_ICE = 'cooplink.ice.v4';
-const LS_CLIENT = 'cooplink.clientId.v4';
+const MAX_PENDING_ICE = 50;
+const LS_SETTINGS = 'cooplink.settings.v5';
+const LS_ICE = 'cooplink.ice.v5';
+const LS_CLIENT = 'cooplink.clientId.v5';
 
 const logs = [];
 
@@ -925,25 +947,28 @@ function parseTurnUrls(text){
     .filter((s) => /^(turn|turns|stun):/i.test(s));
 }
 
-function loadCustomIce(){
+let _cachedIceServers = null;
+function getIceServers(){
+  if (_cachedIceServers) return _cachedIceServers;
   try{
     const raw = localStorage.getItem(LS_ICE);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (parsed && Array.isArray(parsed.urls) && parsed.urls.length) return parsed;
+    if (raw){
+      const parsed = JSON.parse(raw);
+      if (parsed && Array.isArray(parsed.urls) && parsed.urls.length){
+        const entry = { urls: parsed.urls };
+        if (parsed.username) entry.username = parsed.username;
+        if (parsed.credential) entry.credential = parsed.credential;
+        _cachedIceServers = [STUN_SERVERS, entry];
+        return _cachedIceServers;
+      }
+    }
   }catch{}
-  return null;
+  _cachedIceServers = [STUN_SERVERS, OPENRELAY_FALLBACK];
+  return _cachedIceServers;
 }
 
-function getIceServers(){
-  const custom = loadCustomIce();
-  if (custom && custom.urls && custom.urls.length){
-    const entry = { urls: custom.urls };
-    if (custom.username) entry.username = custom.username;
-    if (custom.credential) entry.credential = custom.credential;
-    return [STUN_SERVERS, entry];
-  }
-  return [STUN_SERVERS, OPENRELAY_FALLBACK];
+function invalidateIceCache(){
+  _cachedIceServers = null;
 }
 
 const settings = loadSettings();
@@ -988,7 +1013,11 @@ const state = {
   joinToken: 0,
   clientId: getClientId(),
   wakeLock: null,
-  iceStats: { host: 0, srflx: 0, relay: 0, prflx: 0, errors: 0 }
+  iceStats: { host: 0, srflx: 0, relay: 0, prflx: 0, errors: 0 },
+  disconnectSetupDone: false,
+  viewerRestartAttempts: 0,
+  lastViewerRestartAt: 0,
+  fullscreenState: false
 };
 
 const el = {
@@ -1024,6 +1053,7 @@ const el = {
   btnMuteViewer: $('btnMuteViewer'),
   btnStopShare: $('btnStopShare'),
   btnHostRestart: $('btnHostRestart'),
+  btnUnmuteHost: $('btnUnmuteHost'),
   viewerCodeTiles: $('viewerCodeTiles'),
   hostBadge: $('hostBadge'),
   hostBadgeText: $('hostBadgeText'),
@@ -1152,7 +1182,6 @@ function downloadText(filename, text){
   document.body.appendChild(a);
   a.click();
   a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 4000);
 }
 
 const roomLink = () => `${location.origin}${location.pathname}?room=${state.room || state.pendingRoom || ''}`;
@@ -1209,8 +1238,12 @@ function syncRoleStatus(){
 async function requestWakeLock(){
   if (!('wakeLock' in navigator)) return;
   try{
+    if (state.wakeLock && !state.wakeLock.released) return;
     state.wakeLock = await navigator.wakeLock.request('screen');
     log('wake lock: acquired');
+    state.wakeLock.addEventListener('release', () => {
+      log('wake lock: released');
+    });
   }catch(e){
     log('wake lock failed:', e.message);
   }
@@ -1297,36 +1330,39 @@ function setFullscreenAvailable(on){
 
 function enterFullscreen(v){
   try{
-    if (v.webkitEnterFullscreen) { v.webkitEnterFullscreen(); return; }
-    if (v.webkitEnterFullScreen) { v.webkitEnterFullScreen(); return; }
-    if (v.requestFullscreen) { v.requestFullscreen(); return; }
-    if (v.webkitRequestFullscreen) { v.webkitRequestFullscreen(); return; }
+    if (v.webkitEnterFullscreen) { v.webkitEnterFullscreen(); state.fullscreenState = true; return; }
+    if (v.webkitEnterFullScreen) { v.webkitEnterFullScreen(); state.fullscreenState = true; return; }
+    if (v.requestFullscreen) { v.requestFullscreen(); state.fullscreenState = true; return; }
+    if (v.webkitRequestFullscreen) { v.webkitRequestFullscreen(); state.fullscreenState = true; return; }
   }catch(e){
     log('fullscreen error:', e.message);
   }
   toast('Полноэкранный режим не поддержан этим браузером', 'warn');
 }
 
-function isFullscreen(v){
-  return !!(document.fullscreenElement || document.webkitFullscreenElement || (v && v.webkitDisplayingFullscreen));
+function isFullscreen(){
+  const v = el.videoRemote;
+  return !!(document.fullscreenElement || document.webkitFullscreenElement || (v && v.webkitDisplayingFullscreen) || state.fullscreenState);
 }
 
 function exitFullscreen(v){
   try{
     if (v && v.webkitDisplayingFullscreen && v.webkitExitFullscreen){
       v.webkitExitFullscreen();
+      state.fullscreenState = false;
       return;
     }
-    if (document.exitFullscreen) { document.exitFullscreen(); return; }
-    if (document.webkitExitFullscreen) { document.webkitExitFullscreen(); return; }
+    if (document.exitFullscreen) { document.exitFullscreen(); state.fullscreenState = false; return; }
+    if (document.webkitExitFullscreen) { document.webkitExitFullscreen(); state.fullscreenState = false; return; }
   }catch(e){
     log('exit fullscreen error:', e.message);
   }
+  state.fullscreenState = false;
 }
 
 function toggleViewerFullscreen(){
   const v = el.videoRemote;
-  if (isFullscreen(v)) exitFullscreen(v);
+  if (isFullscreen()) exitFullscreen(v);
   else enterFullscreen(v);
 }
 
@@ -1334,8 +1370,11 @@ async function tryPlayRemote(){
   const v = el.videoRemote;
   try{
     await v.play();
-    if (v.muted) el.tapOverlay.classList.add('visible');
-    else el.tapOverlay.classList.remove('visible');
+    if (v.paused || v.muted){
+      el.tapOverlay.classList.add('visible');
+    }else{
+      el.tapOverlay.classList.remove('visible');
+    }
   }catch{
     el.tapOverlay.classList.add('visible');
   }
@@ -1431,7 +1470,12 @@ async function collectStats(){
     if (bytes != null && state.prevBytes){
       const dt = (t - state.prevBytes.t) / 1000;
       if (dt > 0){
-        el.statBitrate.textContent = (((bytes - state.prevBytes.bytes) * 8) / dt / 1e6).toFixed(1);
+        const delta = bytes - state.prevBytes.bytes;
+        if (delta >= 0){
+          el.statBitrate.textContent = ((delta * 8) / dt / 1e6).toFixed(1);
+        }else{
+          el.statBitrate.textContent = '—';
+        }
       }
     }
     if (bytes != null) state.prevBytes = { bytes, t };
@@ -1488,19 +1532,26 @@ async function mixAudioTracks(tracks){
   if (!tracks.length) return null;
   const AudioContextClass = window.AudioContext || window.webkitAudioContext;
   if (!AudioContextClass) throw new Error('AudioContext not supported');
-  const ctx = new AudioContextClass({ latencyHint: 'interactive' });
-  if (ctx.state === 'suspended'){
-    try { await ctx.resume(); } catch {}
+  let ctx = null;
+  try{
+    ctx = new AudioContextClass({ latencyHint: 'interactive' });
+    if (ctx.state === 'suspended'){
+      try { await ctx.resume(); } catch {}
+    }
+    const dest = ctx.createMediaStreamDestination();
+    for (const track of tracks){
+      if (track.readyState === 'ended') continue;
+      const stream = new MediaStream([track]);
+      const source = ctx.createMediaStreamSource(stream);
+      source.connect(dest);
+    }
+    state.audioCtx = ctx;
+    state.audioDest = dest;
+    return dest.stream.getAudioTracks()[0] || null;
+  }catch(e){
+    if (ctx) { try { ctx.close(); } catch {} }
+    throw e;
   }
-  const dest = ctx.createMediaStreamDestination();
-  for (const track of tracks){
-    const stream = new MediaStream([track]);
-    const source = ctx.createMediaStreamSource(stream);
-    source.connect(dest);
-  }
-  state.audioCtx = ctx;
-  state.audioDest = dest;
-  return dest.stream.getAudioTracks()[0] || null;
 }
 
 function stopMediaTracks(){
@@ -1594,7 +1645,8 @@ async function writePresence(){
 }
 
 function setupDisconnect(){
-  if (!state.room || !state.role) return;
+  if (!state.room || !state.role || state.disconnectSetupDone) return;
+  state.disconnectSetupDone = true;
   try{
     if (state.role === 'host'){
       onDisconnect(ref(db, `rooms/${state.room}/host`)).remove();
@@ -1621,7 +1673,7 @@ function preferVideoCodecs(){
     if (!transceiver || typeof transceiver.setCodecPreferences !== 'function') return;
     if (!RTCRtpSender.getCapabilities) return;
     const caps = RTCRtpSender.getCapabilities('video');
-    if (!caps || !Array.isArray(caps.codecs)) return;
+    if (!caps || !Array.isArray(caps.codecs) || !caps.codecs.length) return;
 
     const preferredMimes = ['video/H264', 'video/VP9', 'video/VP8'];
     const ordered = [];
@@ -1630,7 +1682,7 @@ function preferVideoCodecs(){
     }
     ordered.push(...caps.codecs.filter((c) => !preferredMimes.some((m) => c.mimeType.toLowerCase().startsWith(m.toLowerCase()))));
 
-    transceiver.setCodecPreferences(ordered);
+    if (ordered.length) transceiver.setCodecPreferences(ordered);
     log('video codec preferences applied');
   }catch(e){
     log('codec preferences failed:', e.message);
@@ -1722,6 +1774,7 @@ function buildPc(){
       clearConnectTimeout();
       state.restartAttempts = 0;
       state.lastRestartAt = 0;
+      state.viewerRestartAttempts = 0;
       syncRoleStatus();
       startStats();
       requestWakeLock();
@@ -1753,8 +1806,14 @@ function buildPc(){
 
   pc.oniceconnectionstatechange = () => {
     if (pc !== state.pc) return;
-    const s = pc.iceConnectionState;
-    if (s === 'connected' || s === 'completed') syncRoleStatus();
+    const ics = pc.iceConnectionState;
+    log('iceConnectionState:', ics);
+    if (ics === 'failed'){
+      if (state.role === 'host') scheduleHostRestart(false);
+      else requestRestart(false);
+    }else if (ics === 'connected' || ics === 'completed'){
+      syncRoleStatus();
+    }
   };
 
   pc.ontrack = (e) => {
@@ -1762,6 +1821,10 @@ function buildPc(){
     log('ontrack:', track.kind);
 
     if (state.remoteStream){
+      const existing = state.remoteStream.getTracks().filter(t => t.kind === track.kind);
+      for (const t of existing){
+        try { state.remoteStream.removeTrack(t); } catch {}
+      }
       try { state.remoteStream.addTrack(track); } catch {}
     }
 
@@ -1777,7 +1840,7 @@ function buildPc(){
       el.btnMuteViewer.disabled = false;
       updateHostMuteViewerBtn();
       el.audioRemote.play().catch(() => {
-        toast('Не удалось автоматически включить звук зрителя. Проверь вкладку.', 'warn');
+        el.btnUnmuteHost.classList.add('show');
       });
     }else{
       el.viewerStage.classList.add('live');
@@ -1797,7 +1860,7 @@ function buildPc(){
 async function addRemoteCandidate(c){
   if (!c || !c.candidate) return;
   if (!state.pc){
-    state.pendingIce.push(c);
+    if (state.pendingIce.length < MAX_PENDING_ICE) state.pendingIce.push(c);
     return;
   }
 
@@ -1806,8 +1869,8 @@ async function addRemoteCandidate(c){
     return;
   }
 
-  if (!state.pc.remoteDescription){
-    state.pendingIce.push(c);
+  if (!state.pc.remoteDescription || state.pc.signalingState === 'closed'){
+    if (state.pendingIce.length < MAX_PENDING_ICE) state.pendingIce.push(c);
     return;
   }
 
@@ -1843,7 +1906,13 @@ async function publishOffer(restart){
   const token = state.sessionToken;
   const startToken = state.startToken;
 
-  if (restart) state.pendingIce = [];
+  if (restart){
+    state.pendingIce = [];
+    if (state.pc.signalingState !== 'stable'){
+      log('cannot restart: signalingState =', state.pc.signalingState);
+      return;
+    }
+  }
 
   const offer = await state.pc.createOffer({ iceRestart: !!restart });
   if (token !== state.sessionToken || startToken !== state.startToken) return;
@@ -1903,7 +1972,14 @@ function requestRestart(manual = false){
   if (!state.room) return;
   const now = Date.now();
   if (!manual && now - state.lastRestartReqAt < RESTART_COOLDOWN) return;
+  if (!manual && now - state.lastViewerRestartAt < RESTART_COOLDOWN) return;
+  if (state.viewerRestartAttempts >= MAX_RESTARTS && !manual){
+    toast('Превышен лимит запросов на переподключение. Попробуй вручную.', 'err');
+    return;
+  }
   state.lastRestartReqAt = now;
+  state.lastViewerRestartAt = now;
+  if (!manual) state.viewerRestartAttempts++;
   set(rRef('restartReq'), {
     ts: now,
     manual: !!manual,
@@ -2047,18 +2123,27 @@ async function startSharing(){
 
   try{
     const wantSysAudio = !!el.chkSystemAudio.checked;
+    const isChrome = /Chrome/.test(navigator.userAgent) && !/Edg/.test(navigator.userAgent);
+    const isEdge = /Edg/.test(navigator.userAgent);
 
-    display = await navigator.mediaDevices.getDisplayMedia({
-      video: {
-        cursor: 'always',
-        width: { ideal: 1920 },
-        height: { ideal: 1080 },
-        frameRate: { ideal: Number(settings.fps) || 60 }
-      },
-      audio: wantSysAudio,
-      preferCurrentTab: false,
-      selfBrowserSurface: 'exclude'
-    });
+    const videoConstraints = {
+      cursor: 'always',
+      width: { ideal: 1920 },
+      height: { ideal: 1080 },
+      frameRate: { ideal: Number(settings.fps) || 60 }
+    };
+
+    const displayConstraints = {
+      video: videoConstraints,
+      audio: wantSysAudio
+    };
+
+    if (isChrome || isEdge){
+      displayConstraints.preferCurrentTab = false;
+      displayConstraints.selfBrowserSurface = 'exclude';
+    }
+
+    display = await navigator.mediaDevices.getDisplayMedia(displayConstraints);
 
     if (token !== state.sessionToken || startToken !== state.startToken){
       display.getTracks().forEach((t) => { try { t.stop(); } catch {} });
@@ -2171,6 +2256,7 @@ async function startSharing(){
     el.btnStopShare.disabled = false;
     el.btnHostRestart.disabled = false;
     el.btnStartShare.disabled = true;
+    el.btnUnmuteHost.classList.remove('show');
 
     syncHostStatus();
     toast('Демонстрация запущена', 'ok');
@@ -2224,6 +2310,7 @@ async function stopSharing(byTrackEnded){
   resetMicBtn(el.btnMicHost);
   updateHostMuteViewerBtn();
   el.audioRemote.muted = false;
+  el.btnUnmuteHost.classList.remove('show');
 
   syncHostStatus();
   if (byTrackEnded) toast('Захват экрана завершён системной панелью', 'warn');
@@ -2339,7 +2426,7 @@ async function joinRoom(code){
       toast('Микрофон недоступен — режим просмотра без голоса', 'warn');
     }
 
-    if (token !== state.sessionToken || joinToken !== state.joinToken){
+    if (token !== state.sessionToken || joinToken !== state.startToken){
       stopMediaTracks();
       return;
     }
@@ -2408,6 +2495,13 @@ function watchOffer(){
     if (!o){
       if (state.offerTs){
         log('offer removed');
+        const hostSnap = await get(rRef('host')).catch(() => null);
+        const hostLastSeen = hostSnap?.val()?.lastSeen || 0;
+        const now = Date.now();
+        if (now - hostLastSeen < 15000){
+          log('host still alive, keeping PC');
+          return;
+        }
         state.offerTs = 0;
         state.answerTs = 0;
         state.remoteSessionId = null;
@@ -2445,10 +2539,10 @@ async function handleOffer(o){
   const token = state.sessionToken;
   const joinToken = state.joinToken;
 
-  const needRebuild = !state.pc || !!o.restart || (o.sessionId && o.sessionId !== state.remoteSessionId);
+  const needRebuild = !state.pc || (o.sessionId && o.sessionId !== state.remoteSessionId);
 
   if (needRebuild){
-    log('rebuilding viewer PeerConnection, restart =', !!o.restart);
+    log('rebuilding viewer PeerConnection, new sessionId =', o.sessionId);
     closePc();
     buildPc();
     state.remoteSessionId = o.sessionId || null;
@@ -2456,6 +2550,18 @@ async function handleOffer(o){
       state.pc.addTrack(state.micTrack, state.localStream);
     }
     watchRemoteCandidates();
+  }else if (o.restart && state.pc){
+    log('ICE restart on existing PC');
+    if (state.pc.signalingState !== 'stable'){
+      log('signalingState not stable for restart, rebuilding');
+      closePc();
+      buildPc();
+      state.remoteSessionId = o.sessionId || null;
+      if (state.micTrack && state.localStream){
+        state.pc.addTrack(state.micTrack, state.localStream);
+      }
+      watchRemoteCandidates();
+    }
   }else if (state.micTrack && state.localStream && state.pc.getSenders().length === 0){
     state.pc.addTrack(state.micTrack, state.localStream);
   }
@@ -2533,6 +2639,7 @@ function resetUiSession(){
   el.btnViewerRestart.disabled = true;
   el.btnMuteRemote.disabled = true;
   el.btnMuteViewer.disabled = true;
+  el.btnUnmuteHost.classList.remove('show');
 
   resetMicBtn(el.btnMicHost);
   resetMicBtn(el.btnMicViewer);
@@ -2584,8 +2691,12 @@ function cleanupSession(){
   state.lastRestartAt = 0;
   state.restartAttempts = 0;
   state.lastRestartReqAt = 0;
+  state.viewerRestartAttempts = 0;
+  state.lastViewerRestartAt = 0;
   state.sharing = false;
   state.joining = false;
+  state.disconnectSetupDone = false;
+  state.fullscreenState = false;
 
   resetUiSession();
   resetStatsDom();
@@ -2593,13 +2704,6 @@ function cleanupSession(){
   try{
     history.replaceState(null, '', location.pathname);
   }catch{}
-}
-
-function syncSettingsUi(){
-  el.selBitrate.value = String(settings.maxBitrate);
-  el.selFps.value = String(settings.fps);
-  el.selMode.value = settings.mode;
-  el.selTransport.value = settings.transport;
 }
 
 function bindSettings(){
@@ -2614,6 +2718,7 @@ function bindSettings(){
 
     if (settings.transport !== previousTransport){
       previousTransport = settings.transport;
+      invalidateIceCache();
       toast('Транспорт изменится после переподключения / перезапуска демонстрации', 'warn');
     }
 
@@ -2629,8 +2734,24 @@ function bindSettings(){
   el.selTransport.addEventListener('change', onChange);
 }
 
+  el.selBitrate.addEventListener('change
+  el.selBitrate.addEventListener('change', onChange);
+  el.selFps.addEventListener('change', onChange);
+  el.selMode.addEventListener('change', onChange);
+  el.selTransport.addEventListener('change', onChange);
+}
+
 function updateTurnStatus(){
-  const custom = loadCustomIce();
+  const custom = (() => {
+    try{
+      const raw = localStorage.getItem(LS_ICE);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (parsed && Array.isArray(parsed.urls) && parsed.urls.length) return parsed;
+    }catch{}
+    return null;
+  })();
+
   if (custom && custom.urls && custom.urls.length){
     el.turnStatus.textContent = 'Используется: свой TURN (' + custom.urls.length + ' серверов)';
     el.turnStatus.classList.add('custom');
@@ -2641,7 +2762,16 @@ function updateTurnStatus(){
 }
 
 function loadIceToUi(){
-  const custom = loadCustomIce();
+  const custom = (() => {
+    try{
+      const raw = localStorage.getItem(LS_ICE);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (parsed && Array.isArray(parsed.urls) && parsed.urls.length) return parsed;
+    }catch{}
+    return null;
+  })();
+
   if (custom){
     el.turnUrls.value = (custom.urls || []).join('\n');
     el.turnUser.value = custom.username || '';
@@ -2667,6 +2797,7 @@ function saveTurnFromUi(){
   }catch(e){
     logError('save TURN failed:', e.message);
   }
+  invalidateIceCache();
   updateTurnStatus();
   toast('TURN сохранён. Пересоздай комнату / переподключись, чтобы применить.', 'ok');
   log('custom TURN saved, urls =', urls.length);
@@ -2676,6 +2807,7 @@ function resetTurnUi(){
   try{
     localStorage.removeItem(LS_ICE);
   }catch{}
+  invalidateIceCache();
   loadIceToUi();
   toast('TURN сброшен на публичный fallback', 'ok');
   log('custom TURN cleared');
@@ -2723,14 +2855,21 @@ async function buildDiagnosticReport(){
   }
 
   const report = {
-    app: 'CO-OP LINK v4.0',
+    app: 'CO-OP LINK v5.0',
     generatedAt: new Date().toISOString(),
     url: location.href,
     userAgent: navigator.userAgent,
     language: navigator.language,
     online: navigator.onLine,
     settings,
-    customTurnUsed: !!loadCustomIce(),
+    customTurnUsed: !!(function(){
+      try{
+        const raw = localStorage.getItem(LS_ICE);
+        if (!raw) return false;
+        const parsed = JSON.parse(raw);
+        return parsed && Array.isArray(parsed.urls) && parsed.urls.length;
+      }catch{return false;}
+    })(),
     iceServers: getIceServers().map((s) => ({ urls: s.urls, username: s.username || null })),
     iceStats: state.iceStats,
     firebaseConnected: state.firebaseConnected,
@@ -2745,6 +2884,7 @@ async function buildDiagnosticReport(){
     sharing: state.sharing,
     joining: state.joining,
     restartAttempts: state.restartAttempts,
+    viewerRestartAttempts: state.viewerRestartAttempts,
     pendingIce: state.pendingIce.length,
     peerConnection: pcInfo,
     localTracks: state.localStream ? state.localStream.getTracks().map(trackInfo) : [],
@@ -2847,6 +2987,17 @@ function bindEvents(){
   el.btnMuteViewer.addEventListener('click', () => {
     el.audioRemote.muted = !el.audioRemote.muted;
     updateHostMuteViewerBtn();
+  });
+
+  el.btnUnmuteHost.addEventListener('click', async () => {
+    try{
+      await el.audioRemote.play();
+      el.btnUnmuteHost.classList.remove('show');
+      el.audioRemote.muted = false;
+      updateHostMuteViewerBtn();
+    }catch(e){
+      toast('Не удалось включить звук зрителя: ' + e.message, 'warn');
+    }
   });
 
   el.tapOverlay.addEventListener('click', async () => {
@@ -3015,7 +3166,14 @@ function init(){
     hasScreenCapture,
     urlRoom: roomFromUrl || null,
     settings,
-    customTurn: !!loadCustomIce()
+    customTurn: !!(function(){
+      try{
+        const raw = localStorage.getItem(LS_ICE);
+        if (!raw) return false;
+        const parsed = JSON.parse(raw);
+        return parsed && Array.isArray(parsed.urls) && parsed.urls.length;
+      }catch{return false;}
+    })()
   });
 }
 
