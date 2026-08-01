@@ -6,15 +6,11 @@
 <meta name="theme-color" content="#0d1420">
 <title>CO-OP LINK — P2P-демонстрация экрана для ко-опа</title>
 
-<!-- Шрифты: Russo One (дисплейный, кириллица), Rubik (текст), JetBrains Mono (код/статистика) -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Russo+One&family=Rubik:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 
 <style>
-/* ============================================================
-   1. БАЗА И ПЕРЕМЕННЫЕ
-   ============================================================ */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{color-scheme:dark;-webkit-text-size-adjust:100%}
 :root{
@@ -37,7 +33,6 @@ body{
     linear-gradient(180deg,var(--bg2),var(--bg) 40%);
   background-attachment:fixed;
 }
-/* Фоновая сетка */
 body::before{
   content:'';position:fixed;inset:0;z-index:-2;pointer-events:none;
   background-image:
@@ -47,12 +42,10 @@ body::before{
   mask-image:radial-gradient(ellipse 90% 80% at 50% 20%,#000 30%,transparent 100%);
   -webkit-mask-image:radial-gradient(ellipse 90% 80% at 50% 20%,#000 30%,transparent 100%);
 }
-/* Дрейфующие световые пятна */
 .glow{position:fixed;z-index:-1;border-radius:50%;filter:blur(90px);pointer-events:none;opacity:.5}
 .glow--a{width:52vw;height:52vw;top:-18vw;left:-14vw;background:radial-gradient(circle,rgba(255,150,60,.20),transparent 65%);animation:drift 26s ease-in-out infinite alternate}
 .glow--b{width:46vw;height:46vw;bottom:-16vw;right:-12vw;background:radial-gradient(circle,rgba(63,216,212,.16),transparent 65%);animation:drift 32s ease-in-out infinite alternate-reverse}
 @keyframes drift{from{transform:translate(0,0) scale(1)}to{transform:translate(6vw,4vh) scale(1.15)}}
-/* Лёгкие сканлайны поверх — привкус ЭЛТ-монитора */
 .scanlines{position:fixed;inset:0;z-index:60;pointer-events:none;opacity:.5;
   background:repeating-linear-gradient(0deg,rgba(255,255,255,.014) 0 1px,transparent 1px 3px)}
 
@@ -61,9 +54,6 @@ button{font:inherit;color:inherit}
 video{display:block;width:100%;height:100%;object-fit:contain;background:#05080f}
 :focus-visible{outline:2px solid var(--teal);outline-offset:2px}
 
-/* ============================================================
-   2. HUD-БАР (верхняя панель статуса)
-   ============================================================ */
 .hud{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:14px;
   padding:12px clamp(16px,4vw,36px);border-bottom:1px solid var(--line);
   background:rgba(13,20,32,.82);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
@@ -92,9 +82,6 @@ video{display:block;width:100%;height:100%;object-fit:contain;background:#05080f
   background:var(--amber-dim);color:var(--amber)}
 .room-chip.visible{display:inline-flex}
 
-/* ============================================================
-   3. КНОПКИ (срезанные углы в стиле игрового меню)
-   ============================================================ */
 .btn{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:10px;
   font-family:var(--display);font-size:.92rem;letter-spacing:.09em;text-transform:uppercase;
   padding:14px 26px;border:0;cursor:pointer;color:#181008;user-select:none;
@@ -114,9 +101,6 @@ video{display:block;width:100%;height:100%;object-fit:contain;background:#05080f
 .btn--sm{padding:9px 15px;font-size:.68rem;letter-spacing:.07em}
 .btn--block{width:100%}
 
-/* ============================================================
-   4. ЭКРАНЫ И ЛОББИ
-   ============================================================ */
 main{max-width:1180px;margin:0 auto;padding:10px clamp(16px,4vw,36px) 90px}
 .screen{display:none}
 .screen.active{display:block;animation:fadeUp .45s ease both}
@@ -142,7 +126,6 @@ main{max-width:1180px;margin:0 auto;padding:10px clamp(16px,4vw,36px) 90px}
 .sys-row b{font-weight:700;color:var(--green)}
 .sys-row b.warn{color:var(--amber)}
 
-/* Поток данных: ПК ──P2P──► iPad */
 .flow{display:flex;align-items:stretch;margin:6px 0 30px;border:1px solid var(--line);
   background:rgba(17,26,41,.6);overflow:hidden}
 .flow-node{padding:14px 22px;font-family:var(--display);font-size:.8rem;
@@ -162,7 +145,6 @@ main{max-width:1180px;margin:0 auto;padding:10px clamp(16px,4vw,36px) 90px}
   letter-spacing:.16em;white-space:nowrap;text-align:center;line-height:1.7}
 .flow-mid em{font-style:normal;color:var(--muted)}
 
-/* Карточки ролей — асимметричные */
 .roles{display:grid;grid-template-columns:1.25fr 1fr;gap:22px}
 .role-card{position:relative;border:1px solid var(--line);padding:28px;overflow:hidden;
   background:linear-gradient(180deg,var(--panel),rgba(17,26,41,.7));
@@ -188,7 +170,6 @@ main{max-width:1180px;margin:0 auto;padding:10px clamp(16px,4vw,36px) 90px}
 @keyframes shake{0%,100%{transform:none}20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}
 .role-hint{margin-top:12px;font-family:var(--mono);font-size:.64rem;color:var(--muted);letter-spacing:.06em}
 
-/* Лента «как проходит сессия» */
 .steps{display:flex;flex-wrap:wrap;margin-top:36px;border-top:1px solid var(--line);padding-top:24px}
 .step{flex:1;min-width:180px;padding:0 20px;position:relative}
 .step+.step::before{content:'';position:absolute;left:0;top:4px;bottom:4px;width:1px;background:var(--line)}
@@ -199,9 +180,7 @@ main{max-width:1180px;margin:0 auto;padding:10px clamp(16px,4vw,36px) 90px}
 .step span{display:block;font-size:.78rem;color:var(--muted);line-height:1.5}
 </style>
 <style>
-/* ============================================================
-   5. ЭКРАНЫ КОМНАТ (ХОСТ / ЗРИТЕЛЬ)
-   ============================================================ */
+/* ═══ 5. ЭКРАНЫ КОМНАТ (ХОСТ / ЗРИТЕЛЬ) ═══ */
 .room-top{display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin:26px 0 20px;
   padding:16px 18px;border:1px solid var(--line);
   background:linear-gradient(180deg,var(--panel),rgba(17,26,41,.6))}
@@ -223,7 +202,7 @@ main{max-width:1180px;margin:0 auto;padding:10px clamp(16px,4vw,36px) 90px}
 .presence.online{color:var(--green);border-color:rgba(74,222,128,.4)}
 .presence.online .dot{background:var(--green);box-shadow:0 0 9px var(--green);animation:pulse 1.6s infinite}
 
-/* Сцена видео — 16:9 с HUD-уголками */
+/* Сцена видео 16:9 с HUD-уголками */
 .stage{position:relative;aspect-ratio:16/9;background:#05080f;border:1px solid var(--line);
   overflow:hidden;transition:border-color .35s,box-shadow .35s}
 .stage.live{border-color:rgba(255,180,84,.55);
@@ -250,7 +229,6 @@ main{max-width:1180px;margin:0 auto;padding:10px clamp(16px,4vw,36px) 90px}
   letter-spacing:.06em;text-transform:uppercase}
 .stage-sub{font-family:var(--mono);font-size:.7rem;color:var(--muted);letter-spacing:.1em;line-height:1.8}
 
-/* Иконка монитора (чистый CSS) */
 .icon-screen{width:78px;height:52px;border:3px solid var(--amber);border-radius:5px;
   position:relative;animation:screenGlow 2.4s ease-in-out infinite}
 .icon-screen::before{content:'';position:absolute;inset:5px;
@@ -277,9 +255,7 @@ main{max-width:1180px;margin:0 auto;padding:10px clamp(16px,4vw,36px) 90px}
   letter-spacing:.05em;line-height:1.8}
 .hint-line b{color:var(--amber);font-weight:700}
 
-/* ============================================================
-   6. СТАТИСТИКА, ТОСТЫ, АДАПТИВ
-   ============================================================ */
+/* ═══ 6. СТАТИСТИКА, ТОСТЫ, FULLSCREEN-КНОПКА, АДАПТИВ ═══ */
 .stats{position:fixed;right:18px;bottom:18px;z-index:55;width:272px;padding:14px 16px;
   border:1px solid var(--line2);background:rgba(13,20,32,.95);
   backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
@@ -311,6 +287,17 @@ main{max-width:1180px;margin:0 auto;padding:10px clamp(16px,4vw,36px) 90px}
 @keyframes toastIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 @keyframes toastOut{to{opacity:0;transform:translateY(10px)}}
 
+/* Плавающая кнопка полноэкранного режима (зритель, iPad-friendly) */
+.fs-float{position:absolute;right:14px;bottom:14px;z-index:9;width:54px;height:54px;
+  display:none;place-items:center;border:1px solid rgba(63,216,212,.55);border-radius:14px;
+  background:rgba(13,20,32,.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  color:var(--teal);cursor:pointer;transition:transform .15s ease,background .2s,color .2s}
+.fs-float.show{display:grid}
+.fs-float:hover{background:rgba(63,216,212,.2);color:#fff;transform:scale(1.07)}
+.fs-float svg{width:26px;height:26px}
+.stage:fullscreen,.stage:-webkit-full-screen{border:0;background:#000}
+.stage:fullscreen video,.stage:-webkit-full-screen video{background:#000}
+
 @media (max-width:920px){
   .lobby-head{grid-template-columns:1fr;align-items:start;gap:24px}
   .roles{grid-template-columns:1fr}
@@ -340,7 +327,7 @@ main{max-width:1180px;margin:0 auto;padding:10px clamp(16px,4vw,36px) 90px}
 
 <!-- ═══ HUD-БАР ═══ -->
 <header class="hud">
-  <div class="logo"><span class="logo-mark"><i></i><i></i></span>CO-OP&nbsp;LINK <small>P2P·v1.0</small></div>
+  <div class="logo"><span class="logo-mark"><i></i><i></i></span>CO-OP&nbsp;LINK <small>P2P·v1.1</small></div>
   <div class="hud-spacer"></div>
   <div class="room-chip" id="roomChip">ROOM&nbsp;<b id="roomChipCode">-----</b></div>
   <div class="pill" id="statusPill" data-state="idle"><span class="dot"></span><span id="statusText">ОЖИДАНИЕ</span></div>
@@ -458,31 +445,34 @@ main{max-width:1180px;margin:0 auto;padding:10px clamp(16px,4vw,36px) 90px}
       <div class="live-badge"><i></i>LIVE</div>
       <video id="videoRemote" playsinline autoplay></video>
 
-      <!-- показывается при входе по ссылке ?room=, до тапа -->
       <div class="stage-overlay" id="viewerJoinPanel">
         <div class="stage-msg">Ты приглашён в комнату <span style="color:var(--teal)" id="viewerJoinCode"></span></div>
         <button class="btn btn--teal btn--xl" id="btnViewerConnect">Подключиться</button>
         <div class="stage-sub">Тап включит видео со звуком и запросит доступ к микрофону.</div>
       </div>
 
-      <!-- ожидание, пока хост начнёт демонстрацию -->
       <div class="stage-overlay hidden" id="viewerWaitPanel">
         <div class="stage-msg" id="viewerWaitMsg">Ожидание демонстрации…</div>
         <div class="stage-sub">Хост должен нажать «Начать демонстрацию» на своём ПК</div>
       </div>
 
-      <!-- fallback для autoplay-политики Safari -->
       <div class="tap-overlay" id="tapOverlay">
         <div class="tap-ring"></div>
         <div class="stage-msg">Тапни, чтобы включить видео и звук</div>
         <div class="stage-sub">Safari требует явного жеста для воспроизведения со звуком</div>
       </div>
+
+      <button class="fs-float" id="fsFloat" title="Во весь экран" aria-label="Во весь экран">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+      </button>
     </div>
 
     <div class="controls">
       <button class="btn btn--ghost btn--sm mic-btn" id="btnMicViewer" disabled>🎙 Микрофон: вкл</button>
+      <button class="btn btn--teal btn--sm" id="btnFullscreenViewer" disabled>Во весь экран</button>
       <div class="grow"></div>
-      <div class="hint-line">// смотришь <b>напрямую с ПК хоста</b> · без серверов посередине</div>
+      <div class="hint-line">// смотришь <b>напрямую с ПК хоста</b> · без серверов · иконка в углу видео — на весь iPad</div>
     </div>
   </section>
 </main>
@@ -500,13 +490,15 @@ main{max-width:1180px;margin:0 auto;padding:10px clamp(16px,4vw,36px) 90px}
   </div>
 </aside>
 
-<!-- хост слышит голос зрителя -->
 <audio id="audioRemote" autoplay></audio>
 <div class="toasts" id="toasts"></div>
 
 <script type="module">
 /* ════════════════════════════════════════════════════════════════
-   CO-OP LINK · WebRTC P2P + Firebase RTDB (только сигнализация)
+   CO-OP LINK v1.1 · WebRTC P2P + Firebase RTDB (только сигнализация)
+   Улучшения v1.1: fullscreen зрителя · авто-восстановление из фона ·
+   запрос ICE-restart от зрителя · диагностика icecandidateerror ·
+   фикс порядка pendingIce при ренеготиации.
    ════════════════════════════════════════════════════════════════ */
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import {
@@ -514,25 +506,21 @@ import {
   onValue, onChildAdded, onDisconnect
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
 
-/* ── ШАГ 1. Вставь сюда конфиг своего проекта Firebase ─────────────
-   (Console → Project settings → Your apps → SDK setup and configuration)
-   databaseURL зависит от региона: для europe-west1 — как ниже,
-   для US — https://<ПРОЕКТ>-default-rtdb.firebaseio.com               */
+/* ── Конфиг проекта Firebase (two-players-three, europe-west1) ──── */
 const firebaseConfig = {
-  apiKey:            "AIzaSyDeUQptqVyyWssZi1ekQA9v2SB5aRQYjS4",
-  authDomain:        "two-players-three.firebaseapp.com",
-  databaseURL:       "https://two-players-three-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId:         "two-players-three",
-  storageBucket:     "two-players-three.firebasestorage.app",
-  messagingSenderId: "790977021175",
-  appId:             "1:790977021175:web:80cd9d941cf51a2e0f7ff2"
+  apiKey:            "AIzaSyADutz-SdPLQAdAAh6uFXkduDZeVx7OXNk",
+  authDomain:        "two-players-final.firebaseapp.com",
+  databaseURL:       "https://two-players-final-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId:         "two-players-final",
+  storageBucket:     "two-players-final.firebasestorage.app",
+  messagingSenderId: "846244871941",
+  appId:             "1:846244871941:web:fc1af029431f60b72b816c"
 };
 
-/* ── ШАГ 2. ICE-серверы ─────────────────────────────────────────────
-   STUN  — публичные серверы Google (бесплатно, трафик через них НЕ идёт).
-   TURN  — публичный Open Relay (metered.ca) как fallback: best-effort,
-           без SLA, может быть медленным/недоступным.
-   ПЛАН Б — впиши свои credentials бесплатного тарифа Xirsys/ExpressTURN: */
+/* ── ICE-серверы ─────────────────────────────────────────────────
+   STUN  — публичные Google (бесплатно, трафик через них НЕ идёт).
+   TURN  — публичный Open Relay как fallback (best-effort, без SLA).
+   ПЛАН Б — впиши свои ключи бесплатного тарифа Metered/Xirsys/ExpressTURN. */
 const ICE_SERVERS = [
   { urls: [
       'stun:stun.l.google.com:19302',
@@ -547,10 +535,10 @@ const ICE_SERVERS = [
     username:   'openrelayproject',
     credential: 'openrelayproject'
   }
-  // ,{ urls: ['turn:СВОЙ_СЕРВЕР:3478'], username: 'ЛОГИН', credential: 'ПАРОЛЬ' }
+  // ,{ urls: ['turn:global.relay.metered.ca:80','turn:global.relay.metered.ca:443','turns:global.relay.metered.ca:443'],
+  //   username: 'ТВОЙ_ЛОГИН', credential: 'ТВОЙ_КЛЮЧ' }
 ];
 
-/* ── Параметры видео ── */
 const TARGET_MAX_BITRATE = 16_000_000;  // потолок 16 Мбит/с
 const TARGET_MIN_BITRATE = 2_000_000;   // не опускаться ниже 2 Мбит/с
 const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // без 0/O, 1/I/L
@@ -571,9 +559,12 @@ const state = {
   pendingIce: [],      // очередь кандидатов до setRemoteDescription
   offerTs: 0,
   answerTs: 0,
+  restartReqTs: 0,     // последний обработанный запрос restart от зрителя
   sharing: false,
   statsTimer: null,
   prevBytes: null,
+    iceErrShown: false,  // чтобы icecandidateerror не спамил тостами
+  unsubCandidates: null, // подписка на ICE-кандидаты (идемпотентная)
   unsubscribers: []    // подписки Firebase для очистки
 };
 
@@ -594,6 +585,7 @@ const el = {
   btnViewerLeave: $('btnViewerLeave'), viewerStage: $('viewerStage'), videoRemote: $('videoRemote'),
   viewerJoinPanel: $('viewerJoinPanel'), viewerJoinCode: $('viewerJoinCode'), btnViewerConnect: $('btnViewerConnect'),
   viewerWaitPanel: $('viewerWaitPanel'), viewerWaitMsg: $('viewerWaitMsg'), tapOverlay: $('tapOverlay'),
+  fsFloat: $('fsFloat'), btnFullscreenViewer: $('btnFullscreenViewer'),
   btnMicViewer: $('btnMicViewer'), audioRemote: $('audioRemote'), toasts: $('toasts'),
   statBitrate: $('statBitrate'), statFps: $('statFps'), statRes: $('statRes'),
   statRtt: $('statRtt'), statRoute: $('statRoute')
@@ -606,7 +598,7 @@ function genCode(){
   for (let i = 0; i < CODE_LEN; i++) s += CODE_ALPHABET[rnd[i] % CODE_ALPHABET.length];
   return s;
 }
-const normalizeCode = (v) => v.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, CODE_LEN);
+const normalizeCode = (v) => (v || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, CODE_LEN);
 
 function toast(msg, type = ''){
   const t = document.createElement('div');
@@ -662,7 +654,7 @@ onValue(ref(db, '.info/connected'), (snap) => {
   else if (!state.room)       setStatus('idle', 'Ожидание');
 });
 
-/* При закрытии вкладки — прибираем за собой (плюс сработает onDisconnect) */
+/* При закрытии вкладки — прибираем за собой (плюс серверный onDisconnect) */
 window.addEventListener('beforeunload', () => {
   if (state.role === 'host'   && state.room) remove(ref(db, `rooms/${state.room}`));
   if (state.role === 'viewer' && state.room) remove(ref(db, `rooms/${state.room}/viewer`));
@@ -670,6 +662,7 @@ window.addEventListener('beforeunload', () => {
 /* ═══════════ ЯДРО WebRTC ═══════════ */
 function buildPc(){
   const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS, bundlePolicy: 'max-bundle' });
+  state.iceErrShown = false;
 
   pc.onicecandidate = (e) => {
     if (!e.candidate) return;
@@ -679,6 +672,15 @@ function buildPc(){
       sdpMid: e.candidate.sdpMid,
       sdpMLineIndex: e.candidate.sdpMLineIndex
     }).catch(() => {});
+  };
+
+  // Диагностика NAT-обхода: если STUN/TURN у кого-то блокируется — узнаем сразу, а не по тишине.
+  pc.onicecandidateerror = (e) => {
+    console.warn('ICE candidate error:', e.errorCode, e.errorText, e.url);
+    if (!state.iceErrShown){
+      state.iceErrShown = true;
+      toast('NAT-обход: ошибка кандидата (код ' + e.errorCode + '). Если P2P не соберётся — поднимется TURN.', 'warn');
+    }
   };
 
   pc.onconnectionstatechange = () => {
@@ -692,7 +694,8 @@ function buildPc(){
         publishOffer(true);
       } else {
         setStatus('err', 'Соединение потеряно');
-        toast('Связь потеряна. Хост переподключится автоматически.', 'err');
+        toast('Связь потеряна — прошу хоста пересобрать канал…', 'err');
+        requestRestart();   // зритель сам инициирует restart через Firebase
       }
     }
   };
@@ -711,6 +714,7 @@ function buildPc(){
       el.viewerStage.classList.add('live');
       el.viewerWaitPanel.classList.add('hidden');
       tryPlayRemote();
+      setFullscreenAvailable(true);
     }
   };
 
@@ -770,6 +774,7 @@ async function createRoom(){
     toast(`Комната ${code} создана — отправь другу ссылку`, 'ok');
     watchViewerPresence();
     watchAnswer();
+    watchRestartReq();                                // слушаем просьбы зрителя пересобрать канал
   } catch (e){
     console.error(e);
     setStatus('err', 'Ошибка Firebase');
@@ -792,6 +797,20 @@ function watchViewerPresence(){
       el.viewerBadgeText.textContent = 'Зритель не подключился';
       if (seen) toast('Зритель отключился', 'warn');
       seen = false;
+    }
+  });
+  state.unsubscribers.push(un);
+}
+
+// Зритель просит пересобрать канал (вернулся из фона / сменил сеть) → хост делает ICE-restart.
+function watchRestartReq(){
+  const un = onValue(rRef('restartReq'), (snap) => {
+    const r = snap.val();
+    if (!r || !r.ts || r.ts <= state.restartReqTs) return;
+    state.restartReqTs = r.ts;
+    if (state.pc && state.sharing){
+      toast('Зритель вернулся — пересобираю канал (ICE-restart)…', 'warn');
+      publishOffer(true);
     }
   });
   state.unsubscribers.push(un);
@@ -869,11 +888,13 @@ function watchAnswer(){
 }
 
 function watchRemoteCandidates(){
+  // Идемпотентно: хост вызывает это при каждом «Начать демонстрацию»,
+  // поэтому сначала отписываемся от прошлой подписки, чтобы не дублировать.
+  if (state.unsubCandidates){ try { state.unsubCandidates(); } catch {} }
   const path = state.role === 'host' ? 'viewerCandidates' : 'hostCandidates';
-  const un = onChildAdded(rRef(path), (snap) => addRemoteCandidate(snap.val()));
-  state.unsubscribers.push(un);
+  state.unsubCandidates = onChildAdded(rRef(path), (snap) => addRemoteCandidate(snap.val()));
+  state.unsubscribers.push(state.unsubCandidates);
 }
-
 async function stopSharing(byTrackEnded){
   state.sharing = false;
   if (state.screenTrack){ state.screenTrack.stop(); state.screenTrack = null; }
@@ -948,11 +969,12 @@ function watchOffer(){
     const o = snap.val();
     if (!o){
       if (state.offerTs){                              // хост остановил демонстрацию
-        state.offerTs = 0; state.answerTs = 0;
+          state.offerTs = 0; state.answerTs = 0; state.restartReqTs = 0; state.unsubCandidates = null;
         closePc();
         el.viewerStage.classList.remove('live');
         el.tapOverlay.classList.remove('visible');
         el.videoRemote.srcObject = null;
+        setFullscreenAvailable(false);
         el.viewerWaitPanel.classList.remove('hidden');
         el.viewerWaitMsg.textContent = 'Хост остановил демонстрацию';
         setStatus('wait', 'Ожидание хоста');
@@ -969,7 +991,8 @@ function watchOffer(){
 async function handleOffer(o){
   if (!state.pc) buildPc();
   await remove(rRef('viewerCandidates')).catch(()=>{}); // ренеготиация / ICE-restart
-  state.pendingIce = [];
+  // pendingIce НЕ сбрасываем: кандидаты хоста, пришедшие раньше offer,
+  // обязаны дожить до flushPendingIce() после setRemoteDescription.
   el.viewerWaitPanel.classList.remove('hidden');
   el.viewerWaitMsg.textContent = 'Рукопожатие…';
   await state.pc.setRemoteDescription(new RTCSessionDescription(o));
@@ -1003,6 +1026,45 @@ function tryPlayRemote(){
           .catch(() => el.tapOverlay.classList.add('visible'));
 }
 
+/* ── Полноэкранный режим зрителя ──────────────────────────────────
+   iPad/iPhone Safari: единственный надёжный путь — нативный
+   webkitEnterFullscreen() именно на <video> (системный плеер на весь экран).
+   Chrome/Edge десктоп: стандартный requestFullscreen. */
+function enterFullscreen(v){
+  try {
+    if (v.webkitEnterFullscreen)  { v.webkitEnterFullscreen();  return; }
+    if (v.webkitEnterFullScreen)  { v.webkitEnterFullScreen();  return; }
+    if (v.requestFullscreen)      { v.requestFullscreen();      return; }
+    if (v.webkitRequestFullscreen){ v.webkitRequestFullscreen();return; }
+  } catch (e){ console.warn('fullscreen:', e); }
+  toast('Полноэкранный режим не поддержан этим браузером', 'warn');
+}
+function isFullscreen(v){
+  return !!(document.fullscreenElement || document.webkitFullscreenElement ||
+            (v && v.webkitDisplayingFullscreen));
+}
+function exitFullscreen(v){
+  try {
+    if (v && v.webkitDisplayingFullscreen && v.webkitExitFullscreen){ v.webkitExitFullscreen(); return; }
+    if (document.exitFullscreen)      { document.exitFullscreen();      return; }
+    if (document.webkitExitFullscreen){ document.webkitExitFullscreen();return; }
+  } catch (e){ console.warn('exit fullscreen:', e); }
+}
+function toggleViewerFullscreen(){
+  const v = el.videoRemote;
+  if (isFullscreen(v)) exitFullscreen(v); else enterFullscreen(v);
+}
+function setFullscreenAvailable(on){
+  el.btnFullscreenViewer.disabled = !on;
+  el.fsFloat.classList.toggle('show', !!on);
+}
+
+/* Зритель просит хоста пересобрать канал (вернулся из фона / сменил сеть). */
+function requestRestart(){
+  if (!state.room) return;
+  set(rRef('restartReq'), { ts: Date.now() }).catch(()=>{});
+}
+
 async function viewerLeave(){
   if (state.room) await remove(rRef('viewer')).catch(()=>{});
   cleanupSession();
@@ -1016,14 +1078,32 @@ function cleanupSession(){
   state.unsubscribers = [];
   closePc();
   state.role = null; state.room = null;
-  state.offerTs = 0; state.answerTs = 0;
+  state.offerTs = 0; state.answerTs = 0; state.restartReqTs = 0;
   setRoomChip(null);
   el.audioRemote.srcObject = null;
   el.videoRemote.srcObject = null;
   el.viewerStage.classList.remove('live');
   el.tapOverlay.classList.remove('visible');
+  setFullscreenAvailable(false);
   history.replaceState(null, '', location.pathname);
 }
+
+/* ═══════════ ВОЗВРАТ ИЗ ФОНА (iPad/iOS замораживает вкладку) ═══════════
+   При возврате: будим видео и, если связь умерла, просим пересобрать канал. */
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible' || !state.room) return;
+  if (state.role === 'viewer'){
+    if (el.videoRemote.srcObject && el.videoRemote.paused) el.videoRemote.play().catch(()=>{});
+    if (state.pc && (state.pc.connectionState === 'failed' || state.pc.connectionState === 'disconnected')){
+      toast('Вернулся в приложение — восстанавливаю связь…', 'warn');
+      requestRestart();
+    }
+  } else if (state.role === 'host' && state.sharing && state.pc &&
+             (state.pc.connectionState === 'failed' || state.pc.connectionState === 'disconnected')){
+    toast('Вернулся в приложение — пересобираю канал…', 'warn');
+    publishOffer(true);
+  }
+});
 
 /* ═══════════ СТАТИСТИКА (getStats) ═══════════ */
 function startStats(){ stopStats(); state.prevBytes = null; state.statsTimer = setInterval(collectStats, 1000); }
@@ -1112,6 +1192,8 @@ bindMic(el.btnMicViewer);
 el.tapOverlay.addEventListener('click', () => {
   el.videoRemote.play().then(() => el.tapOverlay.classList.remove('visible')).catch(()=>{});
 });
+el.btnFullscreenViewer.addEventListener('click', toggleViewerFullscreen);
+el.fsFloat.addEventListener('click', toggleViewerFullscreen);
 el.btnStats.addEventListener('click', () => el.statsPanel.classList.toggle('open'));
 el.btnStatsClose.addEventListener('click', () => el.statsPanel.classList.remove('open'));
 
