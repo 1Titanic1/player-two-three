@@ -4,10 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#0d1420">
-<meta name="description" content="CO-OP LINK — P2P-демонстрация экрана для ко-опа через WebRTC и Firebase-сигнализацию.">
+<meta name="description" content="CO-OP LINK v4 — P2P-демонстрация экрана для ко-опа через WebRTC и Firebase-сигнализацию.">
 <meta http-equiv="Permissions-Policy" content="camera=(self), microphone=(self), display-capture=(self), fullscreen=(self)">
 <title>CO-OP LINK — P2P-демонстрация экрана для ко-опа</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230d1420'/%3E%3Crect x='7' y='8' width='6' height='16' fill='%23ffb454'/%3E%3Crect x='17' y='12' width='6' height='12' fill='%233fd8d4'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%rect width='32' height='32' fill='%230d1420'/%3E%rect x='7' y='8' width='6' height='16' fill='%23ffb454'/%3E%rect x='17' y='12' width='6' height='12' fill='%233fd8d4'/%3E%rect x='25' y='16' width='0' height='0'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Russo+One&family=Rubik:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -394,19 +394,66 @@ letter-spacing:.1em;padding:4px 9px;border:1px solid var(--line2);color:var(--mu
 }
 .route-badge.p2p{color:var(--green);border-color:rgba(74,222,128,.45)}
 .route-badge.relay{color:var(--amber);border-color:rgba(255,180,84,.5)}
+.ice-badge{
+display:inline-block;margin-top:4px;font-family:var(--mono);font-size:.6rem;
+letter-spacing:.06em;padding:4px 9px;border:1px solid var(--line2);color:var(--muted);transition:.3s;
+}
+.ice-badge.good{color:var(--green);border-color:rgba(74,222,128,.45)}
+.ice-badge.bad{color:var(--red);border-color:rgba(248,113,113,.45)}
 .diag{
 right:12px;left:12px;bottom:12px;top:74px;
 display:flex;flex-direction:column;gap:12px;padding:16px;
 }
 .diag-actions{display:flex;flex-wrap:wrap;gap:10px}
 .diag textarea{
-flex:1;width:100%;resize:none;
+flex:1;width:100%;resize:none;min-height:120px;
 background:#08101c;color:#d9e7ff;
 border:1px solid var(--line2);padding:12px;
 font-family:var(--mono);font-size:.72rem;line-height:1.55;
 white-space:pre-wrap;word-break:break-word;
 outline:none;
 }
+.turn-cfg{
+border:1px solid var(--line);background:rgba(17,26,41,.7);
+padding:0;margin:0;
+}
+.turn-cfg>summary{
+cursor:pointer;list-style:none;
+font-family:var(--mono);font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;
+color:var(--teal);padding:11px 13px;user-select:none;
+display:flex;align-items:center;justify-content:space-between;gap:10px;
+}
+.turn-cfg>summary::-webkit-details-marker{display:none}
+.turn-cfg>summary::after{content:'＋';color:var(--muted);font-size:.9rem}
+.turn-cfg[open]>summary::after{content:'－'}
+.turn-cfg[open]>summary{border-bottom:1px solid var(--line)}
+.turn-cfg .turn-body{padding:13px;display:grid;gap:10px}
+.turn-cfg label{
+display:grid;gap:6px;
+font-family:var(--mono);font-size:.58rem;letter-spacing:.12em;
+text-transform:uppercase;color:var(--muted);
+}
+.turn-cfg input,.turn-cfg textarea{
+width:100%;padding:9px 10px;
+background:#08101c;color:var(--text);
+border:1px solid var(--line2);outline:none;
+font-family:var(--mono);font-size:.72rem;letter-spacing:.02em;
+transition:border-color .2s,box-shadow .2s;
+}
+.turn-cfg textarea{resize:vertical;min-height:62px;line-height:1.5}
+.turn-cfg input:focus,.turn-cfg textarea:focus{border-color:var(--teal);box-shadow:0 0 0 3px var(--teal-dim)}
+.turn-cfg .turn-row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.turn-cfg .turn-acts{display:flex;flex-wrap:wrap;gap:8px}
+.turn-cfg .turn-note{
+font-family:var(--mono);font-size:.6rem;color:var(--muted);
+letter-spacing:.04em;line-height:1.7;
+}
+.turn-cfg .turn-note b{color:var(--amber);font-weight:700}
+.turn-cfg .turn-status{
+font-family:var(--mono);font-size:.6rem;letter-spacing:.06em;
+padding:6px 9px;border:1px solid var(--line2);color:var(--muted);
+}
+.turn-cfg .turn-status.custom{color:var(--green);border-color:rgba(74,222,128,.4)}
 .toasts{
 position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:80;
 display:flex;flex-direction:column;align-items:center;gap:10px;
@@ -441,6 +488,7 @@ color:var(--teal);cursor:pointer;transition:transform .15s ease,background .2s,c
 .flow-node{flex:1}
 .flow-link{min-width:100%;order:3;padding:12px 18px 16px}
 .settings-grid{grid-template-columns:1fr}
+.turn-cfg .turn-row2{grid-template-columns:1fr}
 }
 @media (max-width:640px){
 .hud{gap:8px;padding:10px 14px}
@@ -466,13 +514,13 @@ color:var(--teal);cursor:pointer;transition:transform .15s ease,background .2s,c
 <div class="scanlines"></div>
 
 <header class="hud">
-  <div class="logo"><span class="logo-mark"><i></i><i></i></span>CO-OP&nbsp;LINK <small>P2P·v3.0</small></div>
+  <div class="logo"><span class="logo-mark"><i></i><i></i></span>CO-OP&nbsp;LINK <small>P2P·v4.0</small></div>
   <div class="hud-spacer"></div>
   <div class="room-chip" id="roomChip">ROOM&nbsp;<b id="roomChipCode">-----</b></div>
   <div class="pill" id="statusPill" data-state="idle" role="status" aria-live="polite">
     <span class="dot"></span><span id="statusText">ОЖИДАНИЕ</span>
   </div>
-  <button class="btn btn--ghost btn--sm" id="btnDiag" title="Собрать полный диагностический отчёт">Анализ</button>
+  <button class="btn btn--ghost btn--sm" id="btnDiag" title="Диагностика и настройка TURN">Анализ</button>
   <button class="btn btn--ghost btn--sm" id="btnStats" title="Живая статистика WebRTC">STATS</button>
 </header>
 
@@ -483,7 +531,7 @@ color:var(--teal);cursor:pointer;transition:transform .15s ease,background .2s,c
         <div class="overline">webrtc · p2p · firebase-сигнализация</div>
         <h1 class="title">Ко-оп<br>без <span class="accent">Дискорда</span></h1>
         <p class="lead">
-          Прямой P2P-стрим экрана с ПК на iPad: битрейт до <b>16 Мбит/с</b>,
+          Прямой P2P-стрим экрана с ПК на iPad/телефон: битрейт до <b>16 Мбит/с</b>,
           приоритет чёткости картинки, голос в обе стороны. Серверов нет — медиа идёт
           <b>напрямую между устройствами</b>, Firebase нужен только для рукопожатия.
         </p>
@@ -505,7 +553,7 @@ color:var(--teal);cursor:pointer;transition:transform .15s ease,background .2s,c
         <div class="flow-mid">P2P · ДО 16 МБИТ/С<br><em>сигнализация → firebase</em></div>
         <div class="flow-line"></div>
       </div>
-      <div class="flow-node flow-node--viewer">📱 iPad друга<small>видео + голос</small></div>
+      <div class="flow-node flow-node--viewer">📱 Устройство друга<small>видео + голос</small></div>
     </div>
 
     <div class="roles">
@@ -521,7 +569,7 @@ color:var(--teal);cursor:pointer;transition:transform .15s ease,background .2s,c
       </div>
 
       <div class="role-card role-card--viewer">
-        <div class="role-tag">Зритель · iPad · Safari</div>
+        <div class="role-tag">Зритель · iPad / телефон · Safari / Chrome</div>
         <h3>Он смотрит</h3>
         <p>
           Введи код комнаты с экрана хоста — и смотри трансляцию,
@@ -604,7 +652,7 @@ color:var(--teal);cursor:pointer;transition:transform .15s ease,background .2s,c
         <div class="stage-sub">
           Chrome/Edge спросит, что транслировать — выбирай «Весь экран».<br>
           Микрофон захватится отдельно. Системный звук — только если включён чекбокс<br>
-          и браузер его отдаст. Если что-то не работает — жми «Анализ» вверху.
+          и браузер его отдаст. Если соединение висит — открой «Анализ» и настрой TURN.
         </div>
       </div>
     </div>
@@ -666,7 +714,7 @@ color:var(--teal);cursor:pointer;transition:transform .15s ease,background .2s,c
       <button class="btn btn--ghost btn--sm" id="btnViewerRestart" disabled>⟳ Переподключиться</button>
       <button class="btn btn--teal btn--sm" id="btnFullscreenViewer" disabled>Во весь экран</button>
       <div class="grow"></div>
-      <div class="hint-line">// смотришь <b>напрямую с ПК хоста</b> · без серверов · иконка в углу видео — на весь iPad</div>
+      <div class="hint-line">// смотришь <b>напрямую с ПК хоста</b> · без серверов · иконка в углу видео — на весь экран</div>
     </div>
   </section>
 </main>
@@ -683,14 +731,46 @@ color:var(--teal);cursor:pointer;transition:transform .15s ease,background .2s,c
     <div class="stat stat--wide"><span>Маршрут медиа</span><br>
       <span class="route-badge" id="statRoute">не установлено</span>
     </div>
+    <div class="stat stat--wide"><span>Собранные ICE-кандидаты</span><br>
+      <span class="ice-badge" id="statIce">—</span>
+    </div>
   </div>
 </aside>
 
-<aside class="diag" id="diagPanel" aria-hidden="true" aria-label="Полный диагностический отчёт">
+<aside class="diag" id="diagPanel" aria-hidden="true" aria-label="Диагностика и настройка сети">
   <h5>
-    Полный анализ · можно скопировать и отправить
+    Анализ · настройка TURN · отчёт
     <button id="btnDiagClose" title="Скрыть" aria-label="Скрыть диагностику">✕</button>
   </h5>
+
+  <details class="turn-cfg" id="turnCfg">
+    <summary>TURN-серверы (настройка сети)</summary>
+    <div class="turn-body">
+      <div class="turn-status" id="turnStatus">Используется: публичный fallback (openrelay)</div>
+      <label>URL сервера (каждый с новой строки или через запятую)
+        <textarea id="turnUrls" spellcheck="false" placeholder="turn:example.com:3478&#10;turns:example.com:443"></textarea>
+      </label>
+      <div class="turn-row2">
+        <label>Username
+          <input id="turnUser" autocomplete="off" spellcheck="false" placeholder="имя">
+        </label>
+        <label>Credential
+          <input id="turnCred" autocomplete="off" spellcheck="false" placeholder="пароль">
+        </label>
+      </div>
+      <div class="turn-acts">
+        <button class="btn btn--teal btn--sm" id="btnTurnSave">Сохранить TURN</button>
+        <button class="btn btn--ghost btn--sm" id="btnTurnReset">Сбросить на дефолт</button>
+      </div>
+      <div class="turn-note">
+        Публичный openrelay часто недоступен — тогда ICE висит в «checking» и видео не идёт.
+        Получи бесплатный TURN на <b>metered.ca</b> (500 МБ/мес): регистрация → раздел TURN →
+        скопируй URL/Username/Credential сюда и сохрани. Повтори на <b>обоих</b> устройствах,
+        затем пересоздай комнату. Креды хранятся только в твоём браузере.
+      </div>
+    </div>
+  </details>
+
   <div class="diag-actions">
     <button class="btn btn--teal btn--sm" id="btnDiagCopy">Копировать отчёт</button>
     <button class="btn btn--ghost btn--sm" id="btnDiagDownload">Скачать .txt</button>
@@ -702,7 +782,8 @@ color:var(--teal);cursor:pointer;transition:transform .15s ease,background .2s,c
 <audio id="audioRemote" autoplay></audio>
 <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
 
-<!-- ЧАСТЬ 1/2 завершена. Ниже во втором сообщении будет JavaScript и закрывающие теги. -->
+<!-- ЧАСТЬ 1/2 завершена. Во втором сообщении — весь JavaScript (v4) с фиксами багов A/C,
+     логикой своего TURN, усиленной ICE-диагностикой и закрывающие теги. -->
 <script type="module">
 const $ = (id) => document.getElementById(id);
 
@@ -738,24 +819,23 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-const DEFAULT_ICE_SERVERS = [
-  {
-    urls: [
-      'stun:stun.l.google.com:19302',
-      'stun:stun1.l.google.com:19302',
-      'stun:stun2.l.google.com:19302'
-    ]
-  },
-  {
-    urls: [
-      'turn:openrelay.metered.ca:80',
-      'turn:openrelay.metered.ca:443',
-      'turns:openrelay.metered.ca:443'
-    ],
-    username: 'openrelayproject',
-    credential: 'openrelayproject'
-  }
-];
+const STUN_SERVERS = {
+  urls: [
+    'stun:stun.l.google.com:19302',
+    'stun:stun1.l.google.com:19302',
+    'stun:stun2.l.google.com:19302'
+  ]
+};
+
+const OPENRELAY_FALLBACK = {
+  urls: [
+    'turn:openrelay.metered.ca:80',
+    'turn:openrelay.metered.ca:443',
+    'turns:openrelay.metered.ca:443'
+  ],
+  username: 'openrelayproject',
+  credential: 'openrelayproject'
+};
 
 const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const CODE_LEN = 5;
@@ -765,9 +845,9 @@ const CONNECT_TIMEOUT_MS = 20000;
 const DISCONNECT_GRACE_MS = 10000;
 const HEARTBEAT_MS = 10000;
 const VIEWER_LOCK_STALE_MS = 30000;
-const LS_SETTINGS = 'cooplink.settings.v3';
-const LS_ICE = 'cooplink.ice.v3';
-const LS_CLIENT = 'cooplink.clientId.v3';
+const LS_SETTINGS = 'cooplink.settings.v4';
+const LS_ICE = 'cooplink.ice.v4';
+const LS_CLIENT = 'cooplink.clientId.v4';
 
 const logs = [];
 
@@ -836,15 +916,32 @@ function saveSettings(){
   }catch{}
 }
 
-function getIceServers(){
+function parseTurnUrls(text){
+  return (text || '')
+    .split(/[\n,]+/)
+    .map((s) => s.trim())
+    .filter((s) => /^(turn|turns|stun):/i.test(s));
+}
+
+function loadCustomIce(){
   try{
     const raw = localStorage.getItem(LS_ICE);
-    if (raw){
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length) return parsed;
-    }
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed && Array.isArray(parsed.urls) && parsed.urls.length) return parsed;
   }catch{}
-  return DEFAULT_ICE_SERVERS;
+  return null;
+}
+
+function getIceServers(){
+  const custom = loadCustomIce();
+  if (custom && custom.urls && custom.urls.length){
+    const entry = { urls: custom.urls };
+    if (custom.username) entry.username = custom.username;
+    if (custom.credential) entry.credential = custom.credential;
+    return [STUN_SERVERS, entry];
+  }
+  return [STUN_SERVERS, OPENRELAY_FALLBACK];
 }
 
 const settings = loadSettings();
@@ -888,7 +985,8 @@ const state = {
   startToken: 0,
   joinToken: 0,
   clientId: getClientId(),
-  wakeLock: null
+  wakeLock: null,
+  iceStats: { host: 0, srflx: 0, relay: 0, prflx: 0, errors: 0 }
 };
 
 const el = {
@@ -952,12 +1050,20 @@ const el = {
   statLoss: $('statLoss'),
   statJitter: $('statJitter'),
   statRoute: $('statRoute'),
+  statIce: $('statIce'),
   diagPanel: $('diagPanel'),
   btnDiagClose: $('btnDiagClose'),
   btnDiagCopy: $('btnDiagCopy'),
   btnDiagDownload: $('btnDiagDownload'),
   btnDiagRefresh: $('btnDiagRefresh'),
-  diagText: $('diagText')
+  diagText: $('diagText'),
+  turnCfg: $('turnCfg'),
+  turnStatus: $('turnStatus'),
+  turnUrls: $('turnUrls'),
+  turnUser: $('turnUser'),
+  turnCred: $('turnCred'),
+  btnTurnSave: $('btnTurnSave'),
+  btnTurnReset: $('btnTurnReset')
 };
 
 function genCode(){
@@ -1061,6 +1167,43 @@ function trackInfo(track){
   };
 }
 
+function updateIceBadge(){
+  const s = state.iceStats || { host: 0, srflx: 0, relay: 0, prflx: 0, errors: 0 };
+  const txt = `host:${s.host} srflx:${s.srflx} relay:${s.relay}` + (s.errors ? ` · err:${s.errors}` : '');
+  el.statIce.textContent = txt;
+  el.statIce.className = 'ice-badge ' + (s.relay > 0 ? 'good' : ((s.srflx > 0 || s.host > 0) ? '' : 'bad'));
+}
+
+function syncHostStatus(){
+  if (state.role !== 'host') return;
+  if (!state.sharing){
+    setStatus('wait', 'Комната готова');
+    return;
+  }
+  const viewerOnline = el.viewerBadge.classList.contains('online');
+  const cs = state.pc ? state.pc.connectionState : 'new';
+  if (cs === 'connected') setStatus('ok', 'Подключено · медиа активно');
+  else if (cs === 'failed') setStatus('err', 'Соединение потеряно');
+  else if (viewerOnline) setStatus('wait', 'Зритель в комнате · соединение…');
+  else setStatus('wait', 'Ожидание зрителя…');
+}
+
+function syncViewerStatus(){
+  if (state.role !== 'viewer') return;
+  const hostOnline = el.hostBadge.classList.contains('online');
+  const cs = state.pc ? state.pc.connectionState : 'new';
+  if (cs === 'connected') setStatus('ok', 'Подключено · медиа активно');
+  else if (cs === 'failed') setStatus('err', 'Соединение потеряно');
+  else if (!state.pc) setStatus('wait', hostOnline ? 'Хост в сети · ожидание демонстрации…' : 'Ожидание хоста');
+  else if (hostOnline) setStatus('wait', 'Соединение устанавливается…');
+  else setStatus('warn', 'Хост не в сети…');
+}
+
+function syncRoleStatus(){
+  if (state.role === 'host') syncHostStatus();
+  else if (state.role === 'viewer') syncViewerStatus();
+}
+
 async function requestWakeLock(){
   if (!('wakeLock' in navigator)) return;
   try{
@@ -1103,22 +1246,6 @@ function armConnectTimeout(){
       else requestRestart(false);
     }
   }, CONNECT_TIMEOUT_MS);
-}
-
-function refreshStatusFromPc(){
-  if (!state.room){
-    setStatus('idle', 'Ожидание');
-    return;
-  }
-  if (!state.pc){
-    setStatus('wait', state.role === 'host' ? 'Комната готова' : 'Ожидание хоста');
-    return;
-  }
-  const cs = state.pc.connectionState;
-  if (cs === 'connected') setStatus('ok', 'Подключено · медиа P2P');
-  else if (cs === 'failed') setStatus('err', 'Соединение потеряно');
-  else if (cs === 'disconnected' || cs === 'connecting' || cs === 'new') setStatus('wait', 'Соединение…');
-  else setStatus('wait', 'Комната готова');
 }
 
 function resetMicBtn(btn){
@@ -1205,11 +1332,8 @@ async function tryPlayRemote(){
   const v = el.videoRemote;
   try{
     await v.play();
-    if (v.muted){
-      el.tapOverlay.classList.add('visible');
-    }else{
-      el.tapOverlay.classList.remove('visible');
-    }
+    if (v.muted) el.tapOverlay.classList.add('visible');
+    else el.tapOverlay.classList.remove('visible');
   }catch{
     el.tapOverlay.classList.add('visible');
   }
@@ -1231,6 +1355,8 @@ function resetStatsDom(){
   el.statJitter.textContent = '—';
   el.statRoute.textContent = 'не установлено';
   el.statRoute.className = 'route-badge';
+  el.statIce.textContent = '—';
+  el.statIce.className = 'ice-badge';
   state.prevBytes = null;
   state.statsSnapshot = null;
 }
@@ -1238,6 +1364,7 @@ function resetStatsDom(){
 function startStats(){
   stopStats();
   resetStatsDom();
+  updateIceBadge();
   state.statsTimer = setInterval(collectStats, 1000);
 }
 
@@ -1543,7 +1670,9 @@ function buildPc(){
   state.sessionId = uid();
   state.iceErrShown = false;
   state.pendingIce = [];
+  state.iceStats = { host: 0, srflx: 0, relay: 0, prflx: 0, errors: 0 };
   state.remoteStream = new MediaStream();
+  updateIceBadge();
 
   if (state.role === 'viewer'){
     el.videoRemote.srcObject = state.remoteStream;
@@ -1554,6 +1683,14 @@ function buildPc(){
 
   pc.onicecandidate = (e) => {
     if (!e.candidate || !state.room) return;
+
+    const cstr = e.candidate.candidate || '';
+    const m = cstr.match(/typ\s+([a-z]+)/i);
+    const typ = m ? m[1].toLowerCase() : 'unknown';
+    if (state.iceStats && state.iceStats[typ] != null) state.iceStats[typ]++;
+    updateIceBadge();
+    log('ICE candidate gathered:', typ);
+
     const path = state.role === 'host' ? 'hostCandidates' : 'viewerCandidates';
     push(rRef(path), {
       candidate: e.candidate.candidate,
@@ -1564,10 +1701,12 @@ function buildPc(){
   };
 
   pc.onicecandidateerror = (e) => {
+    if (state.iceStats) state.iceStats.errors++;
+    updateIceBadge();
     log('ICE candidate error:', e.errorCode, e.errorText, e.url);
     if (!state.iceErrShown){
       state.iceErrShown = true;
-      toast('Ошибка NAT-кандидата. Если P2P не соберётся, будет пробоваться TURN.', 'warn');
+      toast('Ошибка NAT-кандидата (код ' + e.errorCode + '). Если P2P не соберётся — нужен рабочий TURN (кнопка «Анализ»).', 'warn');
     }
   };
 
@@ -1581,13 +1720,13 @@ function buildPc(){
       clearConnectTimeout();
       state.restartAttempts = 0;
       state.lastRestartAt = 0;
-      setStatus('ok', 'Подключено · медиа активно');
+      syncRoleStatus();
       startStats();
       requestWakeLock();
       if (state.role === 'host') el.btnHostRestart.disabled = false;
       if (state.role === 'viewer') el.btnViewerRestart.disabled = false;
     }else if (cs === 'disconnected'){
-      setStatus('warn', 'Сбой связи · восстановление…');
+      syncRoleStatus();
       state.disconnectTimer = setTimeout(() => {
         if (!state.pc) return;
         const current = state.pc.connectionState;
@@ -1597,23 +1736,23 @@ function buildPc(){
         }
       }, DISCONNECT_GRACE_MS);
     }else if (cs === 'failed'){
+      syncRoleStatus();
       if (state.role === 'host'){
         toast('Сбой соединения — пересобираю канал…', 'warn');
         scheduleHostRestart(false);
       }else{
-        setStatus('err', 'Соединение потеряно');
         toast('Связь потеряна — запрашиваю пересборку у хоста…', 'err');
         requestRestart(false);
       }
     }else{
-      refreshStatusFromPc();
+      syncRoleStatus();
     }
   };
 
   pc.oniceconnectionstatechange = () => {
     if (pc !== state.pc) return;
     const s = pc.iceConnectionState;
-    if (s === 'connected' || s === 'completed') setStatus('ok', 'Подключено · медиа активно');
+    if (s === 'connected' || s === 'completed') syncRoleStatus();
   };
 
   pc.ontrack = (e) => {
@@ -1774,8 +1913,10 @@ function watchAnswer(){
   const un = onValue(rRef('answer'), async (snap) => {
     const a = snap.val();
     if (!a || !state.pc || !state.sharing) return;
-    if (a.offerTs && state.currentOfferTs && a.offerTs !== state.currentOfferTs) return;
     if (a.ts <= state.answerTs) return;
+
+    const haveRemote = !!state.pc.remoteDescription;
+    if (haveRemote && a.offerTs && state.currentOfferTs && a.offerTs !== state.currentOfferTs) return;
     if (a.sessionId && state.remoteSessionId && a.sessionId !== state.remoteSessionId) return;
 
     state.answerTs = a.ts;
@@ -1784,7 +1925,7 @@ function watchAnswer(){
     try{
       await state.pc.setRemoteDescription(new RTCSessionDescription({ type: a.type, sdp: a.sdp }));
       flushPendingIce();
-      setStatus('wait', 'Соединение устанавливается…');
+      syncRoleStatus();
       armConnectTimeout();
       log('answer accepted, sessionId =', state.remoteSessionId);
     }catch(e){
@@ -1825,6 +1966,7 @@ function watchViewerPresence(){
       if (seen) toast('Зритель отключился', 'warn');
       seen = false;
     }
+    syncHostStatus();
   });
   state.unsubscribers.push(un);
 }
@@ -1869,7 +2011,7 @@ async function createRoom(){
     renderCodeTiles(el.hostCodeTiles, code);
     setRoomChip(code);
     showScreen('host');
-    setStatus('wait', 'Комната готова');
+    syncHostStatus();
     toast(`Комната ${code} создана — отправь другу ссылку`, 'ok');
     log('room created:', code);
 
@@ -2028,7 +2170,7 @@ async function startSharing(){
     el.btnHostRestart.disabled = false;
     el.btnStartShare.disabled = true;
 
-    setStatus('wait', 'Ожидание зрителя…');
+    syncHostStatus();
     toast('Демонстрация запущена', 'ok');
     log('sharing started, sysAudio =', !!state.sysAudioTrack, ', mic =', !!state.micTrack, ', mixed =', !!state.mixedAudioTrack);
   }catch(e){
@@ -2081,7 +2223,7 @@ async function stopSharing(byTrackEnded){
   updateHostMuteViewerBtn();
   el.audioRemote.muted = false;
 
-  setStatus('wait', 'Комната готова');
+  syncHostStatus();
   if (byTrackEnded) toast('Захват экрана завершён системной панелью', 'warn');
 }
 
@@ -2214,6 +2356,7 @@ async function joinRoom(code){
     el.btnViewerRestart.disabled = false;
 
     el.viewerWaitMsg.textContent = 'Ожидание демонстрации…';
+    syncViewerStatus();
     log('viewer joined room:', code);
   }catch(e){
     const aborted = token !== state.sessionToken || joinToken !== state.joinToken;
@@ -2241,6 +2384,7 @@ function watchHostPresence(){
       if (seen) toast('Хост отключился', 'warn');
       seen = false;
     }
+    syncViewerStatus();
   });
   state.unsubscribers.push(un);
 }
@@ -2260,7 +2404,7 @@ function watchOffer(){
     const o = snap.val();
 
     if (!o){
-      if (state.offerTs || state.pc){
+      if (state.offerTs){
         log('offer removed');
         state.offerTs = 0;
         state.answerTs = 0;
@@ -2272,7 +2416,7 @@ function watchOffer(){
         closePc();
         releaseWakeLock();
         resetViewerConnectionUI('Хост остановил демонстрацию');
-        setStatus('wait', 'Ожидание хоста');
+        syncViewerStatus();
       }
       return;
     }
@@ -2320,7 +2464,7 @@ async function handleOffer(o){
   await remove(rRef('answer')).catch(() => {});
 
   resetViewerConnectionUI('Рукопожатие…');
-  setStatus('wait', 'Соединение устанавливается…');
+  syncViewerStatus();
 
   await state.pc.setRemoteDescription(new RTCSessionDescription({ type: o.type, sdp: o.sdp }));
   flushPendingIce();
@@ -2339,6 +2483,7 @@ async function handleOffer(o){
   });
 
   armConnectTimeout();
+  syncViewerStatus();
   log('answer sent, offerTs =', o.ts, ', sessionId =', state.sessionId);
 }
 
@@ -2482,6 +2627,58 @@ function bindSettings(){
   el.selTransport.addEventListener('change', onChange);
 }
 
+function updateTurnStatus(){
+  const custom = loadCustomIce();
+  if (custom && custom.urls && custom.urls.length){
+    el.turnStatus.textContent = 'Используется: свой TURN (' + custom.urls.length + ' серверов)';
+    el.turnStatus.classList.add('custom');
+  }else{
+    el.turnStatus.textContent = 'Используется: публичный fallback (openrelay)';
+    el.turnStatus.classList.remove('custom');
+  }
+}
+
+function loadIceToUi(){
+  const custom = loadCustomIce();
+  if (custom){
+    el.turnUrls.value = (custom.urls || []).join('\n');
+    el.turnUser.value = custom.username || '';
+    el.turnCred.value = custom.credential || '';
+  }else{
+    el.turnUrls.value = '';
+    el.turnUser.value = '';
+    el.turnCred.value = '';
+  }
+  updateTurnStatus();
+}
+
+function saveTurnFromUi(){
+  const urls = parseTurnUrls(el.turnUrls.value);
+  if (!urls.length){
+    toast('Введи хотя бы один корректный URL (turn:/turns:/stun:)', 'warn');
+    return;
+  }
+  const username = el.turnUser.value.trim();
+  const credential = el.turnCred.value.trim();
+  try{
+    localStorage.setItem(LS_ICE, JSON.stringify({ urls, username, credential }));
+  }catch(e){
+    logError('save TURN failed:', e.message);
+  }
+  updateTurnStatus();
+  toast('TURN сохранён. Пересоздай комнату / переподключись, чтобы применить.', 'ok');
+  log('custom TURN saved, urls =', urls.length);
+}
+
+function resetTurnUi(){
+  try{
+    localStorage.removeItem(LS_ICE);
+  }catch{}
+  loadIceToUi();
+  toast('TURN сброшен на публичный fallback', 'ok');
+  log('custom TURN cleared');
+}
+
 function openStats(){
   el.statsPanel.classList.add('open');
   el.statsPanel.setAttribute('aria-hidden', 'false');
@@ -2495,6 +2692,7 @@ function closeStats(){
 function openDiag(){
   el.diagPanel.classList.add('open');
   el.diagPanel.setAttribute('aria-hidden', 'false');
+  loadIceToUi();
   refreshDiag();
 }
 
@@ -2523,14 +2721,16 @@ async function buildDiagnosticReport(){
   }
 
   const report = {
-    app: 'CO-OP LINK v3.0',
+    app: 'CO-OP LINK v4.0',
     generatedAt: new Date().toISOString(),
     url: location.href,
     userAgent: navigator.userAgent,
     language: navigator.language,
     online: navigator.onLine,
     settings,
+    customTurnUsed: !!loadCustomIce(),
     iceServers: getIceServers().map((s) => ({ urls: s.urls, username: s.username || null })),
+    iceStats: state.iceStats,
     firebaseConnected: state.firebaseConnected,
     clientId: state.clientId,
     role: state.role,
@@ -2679,6 +2879,9 @@ function bindEvents(){
     toast('Файл диагностики скачан', 'ok');
   });
 
+  el.btnTurnSave.addEventListener('click', saveTurnFromUi);
+  el.btnTurnReset.addEventListener('click', resetTurnUi);
+
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState !== 'visible' || !state.room) return;
 
@@ -2753,7 +2956,7 @@ function bindFirebaseConnectionListener(){
       }
     }
 
-    refreshStatusFromPc();
+    syncRoleStatus();
   });
 }
 
@@ -2762,6 +2965,7 @@ function init(){
   bindSettings();
   bindEvents();
   bindFirebaseConnectionListener();
+  loadIceToUi();
 
   const hasWebRtc = 'RTCPeerConnection' in window && !!navigator.mediaDevices;
   const hasScreenCapture = !!navigator.mediaDevices && typeof navigator.mediaDevices.getDisplayMedia === 'function';
@@ -2808,7 +3012,8 @@ function init(){
     hasWebRtc,
     hasScreenCapture,
     urlRoom: roomFromUrl || null,
-    settings
+    settings,
+    customTurn: !!loadCustomIce()
   });
 }
 
