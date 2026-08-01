@@ -499,14 +499,17 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
 
 const firebaseConfig = {
-  apiKey:            "AIzaSyADutz-SdPLQAdAAh6uFXkduDZeVx7OXNk",
-  authDomain:        "two-players-final.firebaseapp.com",
-  databaseURL:       "https://two-players-final-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId:         "two-players-final",
-  storageBucket:     "two-players-final.firebasestorage.app",
-  messagingSenderId: "846244871941",
-  appId:             "1:846244871941:web:fc1af029431f60b72b816c"
+  apiKey:            "AIzaSyCd5bkXTx3re6SRpEl-pozbfmtns5jP0iw",
+  authDomain:        "two-players-ba7fe.firebaseapp.com",
+  databaseURL:       "https://two-players-ba7fe-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId:         "two-players-ba7fe",
+  storageBucket:     "two-players-ba7fe.firebasestorage.app",
+  messagingSenderId: "963077394340",
+  appId:             "1:963077394340:web:c1cf3cd94cb9a600733b31"
 };
+
+const app = initializeApp(firebaseConfig);
+const db  = getDatabase(app);
 
 const ICE_SERVERS = [
   { urls: [
